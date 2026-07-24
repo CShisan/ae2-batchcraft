@@ -1,0 +1,20 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "cn.ae2bc.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "AEBaseMenuInvoker",
+    "PatternEncodingLogicMixin",
+    "PatternEncodingTermMenuMixin"
+  ],
+  "client": [
+    "AbstractContainerScreenInvoker",
+    "GuideMeMixin",
+    "GuideMixin",
+    "PatternEncodingTermScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

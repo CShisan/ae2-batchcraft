@@ -1,0 +1,71 @@
+{
+  "$schema": "../schema.json",
+  "includes": [
+    "../common/common.json"
+  ],
+  "generatedBackground": {
+    "width": 176,
+    "height": 87
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.ae2_batchcraft.input_direction.title"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    }
+  },
+  "widgets": {
+    "auto": {
+      "left": 118,
+      "top": 18,
+      "width": 50,
+      "height": 18
+    },
+    "back": {
+      "left": 152,
+      "top": -5,
+      "width": 20,
+      "height": 20
+    },
+    "front": {
+      "left": 63,
+      "top": 18,
+      "width": 50,
+      "height": 18
+    },
+    "left": {
+      "left": 8,
+      "top": 39,
+      "width": 50,
+      "height": 18
+    },
+    "up": {
+      "left": 63,
+      "top": 39,
+      "width": 50,
+      "height": 18
+    },
+    "right": {
+      "left": 118,
+      "top": 39,
+      "width": 50,
+      "height": 18
+    },
+    "down": {
+      "left": 8,
+      "top": 60,
+      "width": 50,
+      "height": 18
+    },
+    "opposite": {
+      "left": 63,
+      "top": 60,
+      "width": 50,
+      "height": 18
+    }
+  }
+}

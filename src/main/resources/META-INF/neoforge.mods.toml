@@ -1,0 +1,50 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "GPL-3.0-only"
+
+[[mods]]
+modId = "ae2_batchcraft"
+version = "${file.jarVersion}"
+displayName = "AE2 BatchCraft"
+authors = "AE2BC"
+description = '''
+AE2 BatchCraft distributes processing-pattern jobs from a subnet input across channel-free outputs.
+'''
+
+[[mixins]]
+config = "ae2_batchcraft.mixins.json"
+
+[[dependencies.ae2_batchcraft]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.ae2_batchcraft]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,1.21.2)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.ae2_batchcraft]]
+modId = "ae2"
+type = "required"
+versionRange = "[19.0.0,20.0.0)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.ae2_batchcraft]]
+modId = "appmek"
+type = "optional"
+versionRange = "[1.6.0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.ae2_batchcraft]]
+modId = "guideme"
+type = "optional"
+versionRange = "[2.5.1,)"
+ordering = "AFTER"
+side = "CLIENT"

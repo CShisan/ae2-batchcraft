@@ -1,0 +1,65 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.142'
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = rootProject.name
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+repositories {
+    maven { url = 'https://modmaven.dev/' }
+    maven { url = 'https://api.modrinth.com/maven' }
+}
+
+neoForge {
+    version = neo_version
+
+    runs {
+        client { client() }
+        server { server(); programArgument '--nogui' }
+        data {
+            data()
+            programArguments.addAll '--mod', mod_id, '--all', '--output', file('src/generated/resources').absolutePath,
+                    '--existing', file('src/main/resources').absolutePath
+        }
+    }
+
+    mods {
+        "${mod_id}" { sourceSet sourceSets.main }
+    }
+}
+
+dependencies {
+    implementation "appeng:appliedenergistics2:${ae2_version}"
+    implementation 'maven.modrinth:guideme:2.5.1'
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testRuntimeOnly 'org.slf4j:slf4j-api:2.0.9'
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+tasks.named('test', Test) { useJUnitPlatform() }
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.add '-Xlint:deprecation'
+}
+
+jar {
+    manifest {
+        attributes 'Specification-Title': mod_name,
+                'Specification-Vendor': 'AE2BC',
+                'Specification-Version': '1',
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.jar.archiveVersion,
+                'Implementation-Vendor': 'AE2BC'
+    }
+}
