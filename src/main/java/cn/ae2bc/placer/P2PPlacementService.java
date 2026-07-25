@@ -11,8 +11,8 @@ import appeng.api.storage.StorageHelper;
 import appeng.me.helpers.PlayerSource;
 import appeng.me.service.P2PService;
 import cn.ae2bc.item.WirelessPatternP2PPlacerItem;
-import cn.ae2bc.part.PatternP2PTunnelPart;
 import cn.ae2bc.registry.ModContent;
+import appeng.parts.p2p.P2PTunnelPart;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -37,10 +37,12 @@ public final class P2PPlacementService {
         P2PPlacerSettings settings = placer.getOrDefault(
                 ModContent.PLACER_SETTINGS.get(), P2PPlacerSettings.DEFAULT);
         ItemStack cable = WirelessPatternP2PPlacerItem.getMarkedCable(placer);
+        ItemStack part = WirelessPatternP2PPlacerItem.getMarkedPart(placer);
         short frequency = placer.getOrDefault(ModContent.PLACER_FREQUENCY.get(), (short) 0);
 
         if (selection == null || !selection.dimension().equals(level.dimension().location())
-                || !WirelessPatternP2PPlacerItem.isUsableCable(cable)) {
+                || !WirelessPatternP2PPlacerItem.isUsableCable(cable)
+                || !WirelessPatternP2PPlacerItem.isUsablePart(part)) {
             return Result.empty();
         }
         var positions = selection.positions(settings);
@@ -49,11 +51,20 @@ public final class P2PPlacementService {
         }
 
         IPartItem<?> cableItem = (IPartItem<?>) cable.getItem();
-        IPartItem<?> endpointItem = settings.mode() == P2PPlacerMode.INPUT
-                ? ModContent.PATTERN_P2P_TUNNEL_INPUT.get()
-                : ModContent.PATTERN_P2P_TUNNEL_OUTPUT.get();
-        ItemStack endpointStack = endpointItem.asItem().getDefaultInstance();
+        IPartItem<?> partItem = (IPartItem<?>) part.getItem();
         PlayerSource actionSource = new PlayerSource(player);
+
+        int required = countEligibleTargets(level, player, positions);
+        if (WirelessPatternP2PPlacerItem.hasCraftingCard(placer)) {
+            MissingMaterial cableMissing = findMissingMaterial(menuHost, actionSource, cable, required);
+            if (cableMissing != null) {
+                return Result.missing(cableMissing.stack(), cableMissing.amount());
+            }
+            MissingMaterial partMissing = findMissingMaterial(menuHost, actionSource, part, required);
+            if (partMissing != null) {
+                return Result.missing(partMissing.stack(), partMissing.amount());
+            }
+        }
 
         int placed = 0;
         int occupied = 0;
@@ -75,27 +86,27 @@ public final class P2PPlacementService {
                 continue;
             }
 
-            Reservation endpointReservation = extract(menuHost, actionSource, endpointStack);
-            if (endpointReservation == null) {
+            Reservation partReservation = extract(menuHost, actionSource, part);
+            if (partReservation == null) {
                 refund(menuHost, player, actionSource, cableReservation);
                 materialFailed++;
                 continue;
             }
 
-            if (placeAt(level, player, pos, cableItem, endpointItem, settings.direction(), frequency)) {
+            if (placeAt(level, player, pos, cableItem, partItem, settings.direction(), frequency)) {
                 placed++;
             } else {
-                refund(menuHost, player, actionSource, endpointReservation);
+                refund(menuHost, player, actionSource, partReservation);
                 refund(menuHost, player, actionSource, cableReservation);
                 placementFailed++;
             }
         }
 
-        return new Result(placed, occupied, materialFailed, placementFailed);
+        return new Result(placed, occupied, materialFailed, placementFailed, ItemStack.EMPTY, 0);
     }
 
     private static boolean placeAt(ServerLevel level, ServerPlayer player, BlockPos pos,
-                                   IPartItem<?> cableItem, IPartItem<?> endpointItem, Direction direction,
+                                    IPartItem<?> cableItem, IPartItem<?> partItem, Direction direction,
                                    short frequency) {
         IPartHost host = PartHelper.getOrPlacePartHost(level, pos, false, player);
         if (host == null) {
@@ -108,28 +119,61 @@ public final class P2PPlacementService {
             return false;
         }
 
-        IPart endpointPart = addPart(host, endpointItem, direction, player);
-        if (endpointPart == null || !isUnobstructed(level, pos, host)) {
-            removePart(host, endpointPart);
+        IPart placedPart = addPart(host, partItem, direction, player);
+        if (placedPart == null || !isUnobstructed(level, pos, host)) {
+            removePart(host, placedPart);
             removePart(host, cablePart);
             return false;
         }
-        if (!(endpointPart instanceof PatternP2PTunnelPart endpoint)) {
-            removePart(host, endpointPart);
-            removePart(host, cablePart);
-            return false;
-        }
-        if (frequency != 0) {
-            var grid = endpoint.getMainNode().getGrid();
+        if (frequency != 0 && placedPart instanceof P2PTunnelPart<?> tunnel) {
+            var grid = tunnel.getMainNode().getGrid();
             if (grid == null) {
-                endpoint.setFrequency(frequency);
-                endpoint.onTunnelNetworkChange();
+                tunnel.setFrequency(frequency);
+                tunnel.onTunnelNetworkChange();
             } else {
-                P2PService.get(grid).updateFreq(endpoint, frequency);
+                P2PService.get(grid).updateFreq(tunnel, frequency);
             }
-            endpoint.onTunnelConfigChange();
+            tunnel.onTunnelConfigChange();
         }
         return true;
+    }
+
+    private static int countEligibleTargets(ServerLevel level, ServerPlayer player, java.util.List<BlockPos> positions) {
+        int result = 0;
+        for (BlockPos pos : positions) {
+            if (level.isLoaded(pos) && level.mayInteract(player, pos) && level.isEmptyBlock(pos)) {
+                result++;
+            }
+        }
+        return result;
+    }
+
+    private static MissingMaterial findMissingMaterial(P2PPlacerMenuHost host, PlayerSource actionSource,
+                                                       ItemStack requested, int required) {
+        if (required <= 0) {
+            return null;
+        }
+
+        long available = countLocal(host.getMaterials(), requested);
+        if (host.getLinkStatus().connected()) {
+            AEItemKey key = AEItemKey.of(requested);
+            if (key != null) {
+                available += StorageHelper.poweredExtraction(host, host.getInventory(), key, required,
+                        actionSource, Actionable.SIMULATE);
+            }
+        }
+        return available < required ? new MissingMaterial(requested.copyWithCount(1), (int) (required - available)) : null;
+    }
+
+    private static long countLocal(InternalInventory inventory, ItemStack requested) {
+        long available = 0;
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (ItemStack.isSameItemSameComponents(stack, requested)) {
+                available += stack.getCount();
+            }
+        }
+        return available;
     }
 
     private static IPart addPart(IPartHost host, IPartItem<?> partItem, Direction side, ServerPlayer player) {
@@ -203,9 +247,17 @@ public final class P2PPlacementService {
         }
     }
 
-    public record Result(int placed, int occupied, int materialFailed, int placementFailed) {
+    private record MissingMaterial(ItemStack stack, int amount) {
+    }
+
+    public record Result(int placed, int occupied, int materialFailed, int placementFailed,
+                         ItemStack missingMaterial, int missingAmount) {
         public static Result empty() {
-            return new Result(0, 0, 0, 0);
+            return new Result(0, 0, 0, 0, ItemStack.EMPTY, 0);
+        }
+
+        public static Result missing(ItemStack stack, int amount) {
+            return new Result(0, 0, 0, 0, stack, amount);
         }
     }
 }

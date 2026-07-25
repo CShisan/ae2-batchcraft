@@ -6,10 +6,10 @@ import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.Icon;
 import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.AE2Button;
+import appeng.client.gui.widgets.UpgradesPanel;
 import appeng.menu.SlotSemantics;
 import appeng.util.Platform;
 import cn.ae2bc.menu.P2PPlacerMenu;
-import cn.ae2bc.placer.P2PPlacerMode;
 import cn.ae2bc.placer.P2PPlacerSelection;
 import cn.ae2bc.placer.P2PPlacerSettings;
 import net.minecraft.client.Minecraft;
@@ -20,16 +20,15 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.IntSupplier;
 
 public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
-    private final Map<P2PPlacerMode, AE2Button> modeButtons = new EnumMap<>(P2PPlacerMode.class);
     private final Map<Direction, AE2Button> directionButtons = new EnumMap<>(Direction.class);
     private final AE2Button[] minusButtons = new AE2Button[3];
     private final AE2Button[] plusButtons = new AE2Button[3];
@@ -41,27 +40,22 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
     public P2PPlacerScreen(P2PPlacerMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
         super(menu, playerInventory, title, style);
 
-        for (P2PPlacerMode mode : P2PPlacerMode.values()) {
-            String id = mode.getSerializedName();
-            modeButtons.put(mode, addCompactButton("mode" + capitalize(id),
-                    Component.translatable("gui.ae2_batchcraft.wp2pp_placer.mode." + id),
-                    () -> menu.setMode(mode)));
-        }
-
         frequencyWidget = new FrequencyWidget(() -> menu.frequency);
         frequencyWidget.setTooltip(Tooltip.create(Component.translatable(
-                "gui.ae2_batchcraft.wp2pp_placer.frequency.tooltip")));
+                "gui.ae2_batchcraft.component_placer.frequency.tooltip")));
         widgets.add("frequency", frequencyWidget);
+        widgets.add("upgrades", new UpgradesPanel(menu.getSlots(SlotSemantics.UPGRADE),
+                () -> List.of(Component.translatable("gui.ae2_batchcraft.component_placer.upgrades"))));
 
         Direction front = playerInventory.player.getDirection();
         Direction left = front.getCounterClockWise();
         Direction right = front.getClockWise();
         addDirectionButton("directionFront", front, directionName(front));
         addDirectionButton("directionLeft", left, Component.translatable(
-                "gui.ae2_batchcraft.wp2pp_placer.relative.left", directionName(left)));
+                "gui.ae2_batchcraft.component_placer.relative.left", directionName(left)));
         addDirectionButton("directionUp", Direction.UP, directionName(Direction.UP));
         addDirectionButton("directionRight", right, Component.translatable(
-                "gui.ae2_batchcraft.wp2pp_placer.relative.right", directionName(right)));
+                "gui.ae2_batchcraft.component_placer.relative.right", directionName(right)));
         addDirectionButton("directionDown", Direction.DOWN, directionName(Direction.DOWN));
         addDirectionButton("directionBack", front.getOpposite(), directionName(front.getOpposite()));
 
@@ -75,11 +69,11 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
         }
 
         resetOffsets = addCompactButton("resetOffsets",
-                Component.translatable("gui.ae2_batchcraft.wp2pp_placer.reset_offsets"), menu::resetOffsets);
+                Component.translatable("gui.ae2_batchcraft.component_placer.reset_offsets"), menu::resetOffsets);
         clearSelection = addCompactButton("clearSelection",
-                Component.translatable("gui.ae2_batchcraft.wp2pp_placer.clear_selection"), menu::clearSelection);
+                Component.translatable("gui.ae2_batchcraft.component_placer.clear_selection"), menu::clearSelection);
         execute = addCompactButton("execute",
-                Component.translatable("gui.ae2_batchcraft.wp2pp_placer.execute"), menu::execute);
+                Component.translatable("gui.ae2_batchcraft.component_placer.execute"), menu::execute);
     }
 
     @Override
@@ -90,7 +84,7 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
                 return true;
             }
             if (button == 1) {
-                menu.loadFrequency(Screen.hasShiftDown());
+                menu.loadFrequency();
                 return true;
             }
         }
@@ -101,7 +95,8 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
     public void drawBG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY,
                        float partialTicks) {
         super.drawBG(guiGraphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
-        drawSlotBackgrounds(guiGraphics, offsetX, offsetY, SlotSemantics.CONFIG);
+        drawSlotBackgrounds(guiGraphics, offsetX, offsetY, P2PPlacerMenu.CABLE_MARKER_SLOT);
+        drawSlotBackgrounds(guiGraphics, offsetX, offsetY, P2PPlacerMenu.PART_MARKER_SLOT);
         drawSlotBackgrounds(guiGraphics, offsetX, offsetY, SlotSemantics.STORAGE);
         drawSlotBackgrounds(guiGraphics, offsetX, offsetY, SlotSemantics.PLAYER_INVENTORY);
         drawSlotBackgrounds(guiGraphics, offsetX, offsetY, SlotSemantics.PLAYER_HOTBAR);
@@ -110,9 +105,6 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
     @Override
     protected void updateBeforeRender() {
         super.updateBeforeRender();
-        for (var entry : modeButtons.entrySet()) {
-            entry.getValue().active = entry.getKey() != menu.mode;
-        }
         for (var entry : directionButtons.entrySet()) {
             entry.getValue().active = entry.getKey() != menu.direction;
         }
@@ -123,30 +115,30 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
         plusButtons[0].active = menu.offsetX < P2PPlacerSettings.MAX_OFFSET;
         plusButtons[1].active = menu.offsetY < P2PPlacerSettings.MAX_OFFSET;
         plusButtons[2].active = menu.offsetZ < P2PPlacerSettings.MAX_OFFSET;
-        resetOffsets.active = menu.offsetX != 0 || menu.offsetY != 0 || menu.offsetZ != 0;
+        resetOffsets.active = menu.offsetX != 0 || menu.offsetY != 1 || menu.offsetZ != 0;
 
-        boolean hasSelection = menu.sizeX > 0 || menu.sizeY > 0 || menu.sizeZ > 0;
-        clearSelection.active = hasSelection;
-        execute.active = menu.selectionState == P2PPlacerSelection.Validation.VALID && menu.hasCable;
+        clearSelection.active = menu.hasSelection;
+        execute.active = menu.selectionState == P2PPlacerSelection.Validation.VALID
+                && menu.hasCable && menu.hasPart;
 
         setTextContent("offsetX", Component.translatable(
-                "gui.ae2_batchcraft.wp2pp_placer.offset_value", "X", menu.offsetX));
+                "gui.ae2_batchcraft.component_placer.offset_value", "X", menu.offsetX));
         setTextContent("offsetY", Component.translatable(
-                "gui.ae2_batchcraft.wp2pp_placer.offset_value", "Y", menu.offsetY));
+                "gui.ae2_batchcraft.component_placer.offset_value", "Y", menu.offsetY));
         setTextContent("offsetZ", Component.translatable(
-                "gui.ae2_batchcraft.wp2pp_placer.offset_value", "Z", menu.offsetZ));
+                "gui.ae2_batchcraft.component_placer.offset_value", "Z", menu.offsetZ));
         setTextContent("frequencyText", Platform.p2p().toColoredHexString((short) menu.frequency));
         execute.setTooltip(Tooltip.create(selectionStatus()));
     }
 
     private Component selectionStatus() {
         return switch (menu.selectionState) {
-            case VALID -> Component.translatable("gui.ae2_batchcraft.wp2pp_placer.selection.valid",
+            case VALID -> Component.translatable("gui.ae2_batchcraft.component_placer.selection.valid",
                     menu.sizeX, menu.sizeY, menu.sizeZ);
-            case INCOMPLETE -> Component.translatable("gui.ae2_batchcraft.wp2pp_placer.selection.incomplete");
+            case INCOMPLETE -> Component.translatable("gui.ae2_batchcraft.component_placer.selection.incomplete");
             case VOLUME_NOT_ALLOWED -> Component.translatable(
-                    "gui.ae2_batchcraft.wp2pp_placer.selection.volume");
-            case TOO_LARGE -> Component.translatable("gui.ae2_batchcraft.wp2pp_placer.selection.too_large");
+                    "gui.ae2_batchcraft.component_placer.selection.volume");
+            case TOO_LARGE -> Component.translatable("gui.ae2_batchcraft.component_placer.selection.too_large");
         };
     }
 
@@ -162,7 +154,7 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
 
     private Component directionName(Direction direction) {
         return Component.translatable(
-                "gui.ae2_batchcraft.wp2pp_placer.direction." + direction.getSerializedName());
+                "gui.ae2_batchcraft.component_placer.direction." + direction.getSerializedName());
     }
 
     private void drawSlotBackgrounds(GuiGraphics guiGraphics, int offsetX, int offsetY,
@@ -211,7 +203,7 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
         private final IntSupplier frequency;
 
         private FrequencyWidget(IntSupplier frequency) {
-            super(0, 0, 0, 0, Component.translatable("gui.ae2_batchcraft.wp2pp_placer.frequency"));
+            super(0, 0, 0, 0, Component.translatable("gui.ae2_batchcraft.component_placer.frequency"));
             this.frequency = frequency;
         }
 

@@ -24,11 +24,11 @@ class GuidePageResourceTest {
     private static final String INPUT_RECIPE =
             "data/ae2_batchcraft/recipe/pattern_p2p_tunnel_input.json";
     private static final String PLACER_RECIPE =
-            "data/ae2_batchcraft/recipe/wp2pp_placer.json";
+            "data/ae2_batchcraft/recipe/component_placer.json";
     private static final String ENERGY_TUNNEL_RECIPE =
             "data/ae2_batchcraft/recipe/pattern_p2p_tunnel_energy.json";
     private static final String PLACER_SCREEN =
-            "assets/ae2/screens/ae2_batchcraft/wp2pp_placer.json";
+            "assets/ae2/screens/ae2_batchcraft/component_placer.json";
     private static final String ENERGY_TUNNEL_SCREEN =
             "assets/ae2/screens/ae2_batchcraft/pattern_p2p_tunnel_energy.json";
     private static final String AE2_PATTERN_PROVIDER_TAG = "data/ae2/tags/item/pattern_provider.json";
@@ -42,14 +42,14 @@ class GuidePageResourceTest {
         assertTrue(page.contains("- ae2_batchcraft:pattern_p2p_tunnel_input"));
         assertTrue(page.contains("- ae2_batchcraft:pattern_p2p_tunnel_output"));
         assertTrue(page.contains("- ae2_batchcraft:pattern_p2p_tunnel_energy"));
-        assertTrue(page.contains("- ae2_batchcraft:wp2pp_placer"));
+        assertTrue(page.contains("- ae2_batchcraft:component_placer"));
         assertTrue(page.contains("## Pattern P2P Tunnel (Energy)"));
         assertTrue(page.contains("every Pattern P2P Tunnel output"));
         assertTrue(page.contains("Passive receive"));
-        assertTrue(page.contains("## Wireless Pattern P2P Placer"));
+        assertTrue(page.contains("## AE Component Placer"));
         assertTrue(page.contains("four-color frequency square"));
         assertTrue(page.contains("Left-click the four-color frequency square"));
-        assertTrue(page.contains("main or sub endpoint immediately receives the frequency"));
+        assertTrue(page.contains("Every newly placed P2P part receives the frequency"));
         assertTrue(page.contains("## Important Notes"));
         assertGuideParses(page);
     }
@@ -65,9 +65,9 @@ class GuidePageResourceTest {
         assertTrue(page.contains("## 样板 P2P 通道（能量）"));
         assertTrue(page.contains("被动接收"));
         assertTrue(page.contains("主动拉取"));
-        assertTrue(page.contains("## 无线样板P2P放置器"));
+        assertTrue(page.contains("## AE部件放置器"));
         assertTrue(page.contains("四色频率方块"));
-        assertTrue(page.contains("- ae2_batchcraft:wp2pp_placer"));
+        assertTrue(page.contains("- ae2_batchcraft:component_placer"));
         assertTrue(page.contains("- ae2_batchcraft:pattern_p2p_tunnel_energy"));
         assertFalse(page.contains("<!--"));
         assertFalse(page.equals(readText(ENGLISH_GUIDE)));
@@ -92,7 +92,7 @@ class GuidePageResourceTest {
         assertTrue(recipe.contains("\"item\": \"ae2:wireless_terminal\""));
         assertTrue(recipe.contains("\"item\": \"ae2_batchcraft:pattern_p2p_tunnel_input\""));
         assertTrue(recipe.contains("\"item\": \"ae2_batchcraft:pattern_p2p_tunnel_output\""));
-        assertTrue(recipe.contains("\"id\": \"ae2_batchcraft:wp2pp_placer\""));
+        assertTrue(recipe.contains("\"id\": \"ae2_batchcraft:component_placer\""));
     }
 
     @Test
@@ -122,15 +122,24 @@ class GuidePageResourceTest {
     void placerScreenSeparatesSlotsAndUsesRelativeDirectionLayout() throws Exception {
         String screen = readText(PLACER_SCREEN);
 
-        assertTrue(screen.contains("\"CONFIG\""));
+        assertTrue(screen.contains("\"AE2_BATCHCRAFT_CABLE_MARKER\""));
+        assertTrue(screen.contains("\"AE2_BATCHCRAFT_PART_MARKER\""));
         assertTrue(screen.contains("\"STORAGE\""));
         assertTrue(screen.contains("\"PLAYER_INVENTORY\""));
         assertTrue(screen.contains("\"PLAYER_HOTBAR\""));
         assertTrue(screen.contains("\"width\": 176"));
-        assertTrue(screen.contains("\"height\": 216"));
+        assertTrue(screen.contains("\"height\": 224"));
         assertFalse(screen.contains("\"scale\""));
-        assertTrue(screen.contains("\"align\": \"RIGHT\""));
         assertTrue(screen.contains("\"align\": \"CENTER\""));
+        assertTrue(screen.contains("gui.ae2_batchcraft.component_placer.cable"));
+        assertTrue(screen.contains("gui.ae2_batchcraft.component_placer.part"));
+        assertFalse(screen.contains("gui.ae2_batchcraft.component_placer.markers"));
+        assertFalse(screen.contains("gui.ae2_batchcraft.component_placer.direction\""));
+        assertTrue(screen.contains("\"frequency\": { \"left\": 154"));
+        assertTrue(screen.contains("\"materials_label\""));
+        assertTrue(screen.contains("../common/common.json"));
+        assertFalse(screen.contains("\"modeInput\""));
+        assertFalse(screen.contains("\"modeOutput\""));
         assertTrue(screen.contains("\"directionFront\""));
         assertTrue(screen.contains("\"directionLeft\""));
         assertTrue(screen.contains("\"directionRight\""));

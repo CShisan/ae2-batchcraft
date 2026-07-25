@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AEBaseMenuInvoker",
+    "P2PTunnelPartMixin",
     "PatternEncodingLogicMixin",
     "PatternEncodingTermMenuMixin"
   ],

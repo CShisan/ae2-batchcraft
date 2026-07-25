@@ -4,6 +4,7 @@ import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.AE2Button;
 import cn.ae2bc.menu.PatternP2PTunnelEnergyMenu;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
@@ -16,8 +17,12 @@ public final class PatternP2PTunnelEnergyScreen extends AEBaseScreen<PatternP2PT
         super(menu, playerInventory, title, style);
         passiveButton = widgets.addButton("passive", Component.translatable(
                 "gui.ae2_batchcraft.energy.mode.passive"), () -> menu.setPullEnabled(false));
+        passiveButton.setTooltip(Tooltip.create(Component.translatable(
+                "gui.ae2_batchcraft.energy.mode.passive.tooltip")));
         activeButton = widgets.addButton("active", Component.translatable(
                 "gui.ae2_batchcraft.energy.mode.active"), () -> menu.setPullEnabled(true));
+        activeButton.setTooltip(Tooltip.create(Component.translatable(
+                "gui.ae2_batchcraft.energy.mode.active.tooltip")));
     }
 
     @Override

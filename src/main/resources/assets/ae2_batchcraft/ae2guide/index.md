@@ -7,7 +7,7 @@ item_ids:
 - ae2_batchcraft:pattern_p2p_tunnel_input
 - ae2_batchcraft:pattern_p2p_tunnel_output
 - ae2_batchcraft:pattern_p2p_tunnel_energy
-- ae2_batchcraft:wp2pp_placer
+- ae2_batchcraft:component_placer
 ---
 
 # AE2 BatchCraft
@@ -16,7 +16,7 @@ item_ids:
   <ItemImage id="ae2_batchcraft:pattern_p2p_tunnel_input" scale="3" />
   <ItemImage id="ae2_batchcraft:pattern_p2p_tunnel_output" scale="3" />
   <ItemImage id="ae2_batchcraft:pattern_p2p_tunnel_energy" scale="3" />
-  <ItemImage id="ae2_batchcraft:wp2pp_placer" scale="3" />
+  <ItemImage id="ae2_batchcraft:component_placer" scale="3" />
 </Row>
 
 AE2 BatchCraft provides one-to-many P2P distribution channels for AE2 processing patterns.
@@ -34,7 +34,7 @@ Hover over any item from this mod in an inventory and hold AE2's guide key, `G`,
 - Pattern P2P Tunnel (Input): receives jobs from a standard Pattern Provider and distributes them among outputs on the same frequency.
 - Pattern P2P Tunnel (Output): receives jobs from the input, inserts ingredients into a machine, and returns machine products to the input.
 - Pattern P2P Tunnel (Energy): powers its AE subnet first, then distributes remaining FE among machines connected to every configured output in that subnet.
-- Wireless Pattern P2P Placer: places a selected point, line, or plane of cables and main/sub endpoints using AE network storage or its six local material slots.
+- AE Component Placer: places a selected point, line, or plane of cables and cable-attached parts using AE network storage or its nine local material slots.
 - Configurable ingredient input sides: in a standard AE2 Pattern Encoding Terminal, switch to processing-pattern mode, hover over an input ingredient, and press `Ctrl + Middle Mouse Button` to configure its input side. Only Pattern P2P Tunnel outputs use this extra direction data; standard Pattern Providers ignore it.
 
 <br/>
@@ -157,11 +157,11 @@ All eligible outputs participate regardless of their actual frequency. Energy is
 
 <br/>
 
-## Wireless Pattern P2P Placer
+## AE Component Placer
 
-<RecipeFor id="ae2_batchcraft:wp2pp_placer" />
+<RecipeFor id="ae2_batchcraft:component_placer" />
 
-The placer uses the same network binding, wireless range, and power rules as an AE2 wireless terminal. Bind it through an AE2 Security Station and charge it before using network materials. It can still use materials stored in its six local slots while disconnected from the network.
+The placer uses the same network binding, wireless range, and power rules as an AE2 wireless terminal. Bind it through an AE2 Security Station and charge it before using network materials. It can still use materials stored in its nine local slots while disconnected from the network.
 
 ### Selecting an Area
 
@@ -169,18 +169,19 @@ The placer uses the same network binding, wireless range, and power rules as an 
 - Starting a new selection resets its translation to `X: 0, Y: +1, Z: 0`, placing the target one block above the selected blocks by default.
 - The selection may be one point, one line, or one plane. Three-dimensional volumes are rejected.
 - Each axis may contain at most `16` blocks, and a plane may contain at most `16x16` targets.
-- The X, Y, and Z controls in the placer screen translate the complete selection by up to `5` blocks in either direction without resizing it.
+- The X, Y, and Z controls in the placer screen translate the complete selection by up to `16` blocks in either direction without resizing it.
 
 ### Configuration and Placement
 
 - Put a cable into the cable marker slot. This is a ghost slot: it records the exact cable type and color without consuming the sample. Dense cables cannot be selected.
-- The placer screen shows the player inventory. Drag a cable into the cable marker slot, and move cables or endpoints into the six local material slots as needed.
-- Choose main-endpoint or sub-endpoint mode and the absolute direction that every endpoint will face.
-- Left-click the four-color frequency square to reset it to `0000`. Right-click it with an AE2 Memory Card to load its Pattern P2P frequency. `Shift + Right-click` generates a new frequency from the connected AE network; if a card is present, the new frequency is also written to it.
-- The six local slots accept only usable AE cables and this mod's main/sub endpoints.
+- Put a cable-attached part into the part marker slot. Both marker slots are ghost slots and do not consume their samples.
+- The placer screen shows the player inventory. Move cables or parts into the nine local material slots as needed.
+- Choose the absolute direction that every marked part will face.
+- Left-click the four-color frequency square to reset it to `0000`. Right-click it with an AE2 Memory Card to load the P2P frequency stored on the card.
+- The nine local slots accept usable AE cables and cable-attached parts.
 - Press **Place** to run the operation. Non-air targets are skipped before any material is extracted.
-- For every target, the placer extracts the selected cable and endpoint from the AE network first, then falls back to the six local slots. If either item is unavailable, that target is skipped and any partial extraction is refunded.
-- Every newly placed main or sub endpoint immediately receives the frequency shown by the placer. Frequency `0000` leaves endpoints unconfigured.
+- For every target, the placer extracts the selected cable and part from the AE network first, then falls back to the nine local slots. If either item is unavailable, that target is skipped and any partial extraction is refunded.
+- Every newly placed P2P part receives the frequency shown by the placer. Frequency `0000` leaves P2P parts unconfigured; non-P2P parts ignore the frequency.
 
 <br/>
 <br/>

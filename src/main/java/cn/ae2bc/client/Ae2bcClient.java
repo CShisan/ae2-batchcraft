@@ -16,7 +16,7 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 public final class Ae2bcClient {
     private static final String INPUT_SCREEN_STYLE = "/screens/ae2_batchcraft/pattern_p2p_tunnel_input.json";
     private static final String OUTPUT_SCREEN_STYLE = "/screens/ae2_batchcraft/pattern_p2p_tunnel_output.json";
-    private static final String PLACER_SCREEN_STYLE = "/screens/ae2_batchcraft/wp2pp_placer.json";
+    private static final String PLACER_SCREEN_STYLE = "/screens/ae2_batchcraft/component_placer.json";
     private static final String ENERGY_SCREEN_STYLE = "/screens/ae2_batchcraft/pattern_p2p_tunnel_energy.json";
 
     public Ae2bcClient(IEventBus modBus) {

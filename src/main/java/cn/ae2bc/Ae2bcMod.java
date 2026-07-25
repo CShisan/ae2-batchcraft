@@ -3,10 +3,13 @@ package cn.ae2bc;
 import appeng.api.AECapabilities;
 import appeng.api.parts.RegisterPartCapabilitiesEvent;
 import appeng.api.features.GridLinkables;
+import appeng.api.upgrades.Upgrades;
+import appeng.core.definitions.AEItems;
 import appeng.items.tools.powered.WirelessTerminalItem;
 import appeng.items.tools.powered.powersink.PoweredItemCapabilities;
 import cn.ae2bc.part.PatternP2PTunnelPart;
 import cn.ae2bc.part.PatternP2PTunnelEnergyPart;
+import cn.ae2bc.item.WirelessPatternP2PPlacerItem;
 import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.registry.ModMenus;
 import com.mojang.logging.LogUtils;
@@ -33,6 +36,8 @@ public final class Ae2bcMod {
         modBus.addListener(Ae2bcMod::registerItemCapabilities);
         modBus.addListener(Ae2bcMod::commonSetup);
         NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, true,
+                WirelessPatternP2PPlacerItem::onRightClickBlock);
+        NeoForge.EVENT_BUS.addListener(EventPriority.HIGHEST, true,
                 PatternP2PTunnelPart::onRightClickBlock);
     }
 
@@ -40,6 +45,8 @@ public final class Ae2bcMod {
         event.enqueueWork(() -> {
             GridLinkables.register(
                     ModContent.WIRELESS_PATTERN_P2P_PLACER.get(), WirelessTerminalItem.LINKABLE_HANDLER);
+            Upgrades.add(AEItems.ENERGY_CARD, ModContent.WIRELESS_PATTERN_P2P_PLACER.get(), 2);
+            Upgrades.add(AEItems.CRAFTING_CARD, ModContent.WIRELESS_PATTERN_P2P_PLACER.get(), 1);
             ModMenus.verifyRegistrations();
         });
     }

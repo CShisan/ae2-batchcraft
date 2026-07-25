@@ -7,7 +7,7 @@ version = mod_version
 group = mod_group_id
 
 base {
-    archivesName = rootProject.name
+    archivesName = "${rootProject.name}-${minecraft_version}"
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -54,6 +54,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 jar {
+    archiveClassifier.set('neoforge')
     manifest {
         attributes 'Specification-Title': mod_name,
                 'Specification-Vendor': 'AE2BC',

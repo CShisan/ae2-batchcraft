@@ -15,6 +15,7 @@ public final class P2PPlacerMenuHost
         extends WirelessTerminalMenuHost<WirelessPatternP2PPlacerItem> {
     private final SupplierInternalInventory<InternalInventory> materials;
     private final SupplierInternalInventory<InternalInventory> cableFilter;
+    private final SupplierInternalInventory<InternalInventory> partFilter;
 
     public P2PPlacerMenuHost(WirelessPatternP2PPlacerItem item, Player player,
                              ItemMenuHostLocator locator,
@@ -24,6 +25,8 @@ public final class P2PPlacerMenuHost
                 this::getItemStack, WirelessPatternP2PPlacerItem::getMaterialInventory));
         cableFilter = new SupplierInternalInventory<>(new StackDependentSupplier<>(
                 this::getItemStack, WirelessPatternP2PPlacerItem::getCableFilterInventory));
+        partFilter = new SupplierInternalInventory<>(new StackDependentSupplier<>(
+                this::getItemStack, WirelessPatternP2PPlacerItem::getPartFilterInventory));
     }
 
     public InternalInventory getMaterials() {
@@ -33,4 +36,9 @@ public final class P2PPlacerMenuHost
     public InternalInventory getCableFilter() {
         return cableFilter;
     }
+
+    public InternalInventory getPartFilter() {
+        return partFilter;
+    }
+
 }

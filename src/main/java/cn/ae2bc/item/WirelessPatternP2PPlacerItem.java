@@ -3,6 +3,10 @@ package cn.ae2bc.item;
 import appeng.api.implementations.parts.ICablePart;
 import appeng.api.parts.BusSupport;
 import appeng.api.parts.IPartItem;
+import appeng.api.upgrades.IUpgradeInventory;
+import appeng.api.upgrades.UpgradeInventories;
+import appeng.api.upgrades.Upgrades;
+import appeng.core.definitions.AEItems;
 import appeng.items.tools.powered.WirelessTerminalItem;
 import appeng.menu.locator.ItemMenuHostLocator;
 import appeng.util.inv.AppEngInternalInventory;
@@ -21,15 +25,18 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 public final class WirelessPatternP2PPlacerItem extends WirelessTerminalItem {
-    public static final int MATERIAL_SLOT_COUNT = 6;
+    public static final int MATERIAL_SLOT_COUNT = 9;
 
     public WirelessPatternP2PPlacerItem(DoubleSupplier powerCapacity, Properties properties) {
         super(powerCapacity, properties);
@@ -42,42 +49,70 @@ public final class WirelessPatternP2PPlacerItem extends WirelessTerminalItem {
             return InteractionResult.PASS;
         }
 
-        ItemStack placer = context.getItemInHand();
-        var dimension = context.getLevel().dimension().location();
-        if (context.isSecondaryUseActive()) {
-            if (!context.getLevel().isClientSide()) {
-                placer.set(ModContent.PLACER_SELECTION.get(),
-                        P2PPlacerSelection.start(dimension, context.getClickedPos()));
-                P2PPlacerSettings settings = placer.getOrDefault(
-                        ModContent.PLACER_SETTINGS.get(), P2PPlacerSettings.DEFAULT);
-                placer.set(ModContent.PLACER_SETTINGS.get(), settings.resetOffsetsForNewSelection());
-                player.displayClientMessage(Component.translatable(
-                        "message.ae2_batchcraft.wp2pp_placer.first_set",
-                        context.getClickedPos().toShortString()), true);
-            }
-            return InteractionResult.sidedSuccess(context.getLevel().isClientSide());
+        return trySelect(player, context.getItemInHand(), context.getClickedPos(),
+                context.getLevel().dimension().location(), context.isSecondaryUseActive(), context.getLevel().isClientSide())
+                ? InteractionResult.sidedSuccess(context.getLevel().isClientSide())
+                : InteractionResult.PASS;
+    }
+
+    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        ItemStack placer = event.getItemStack();
+        if (!(placer.getItem() instanceof WirelessPatternP2PPlacerItem)
+                && event.getHand() == net.minecraft.world.InteractionHand.MAIN_HAND
+                && placer.isEmpty()
+                && event.getEntity().getOffhandItem().getItem() instanceof WirelessPatternP2PPlacerItem) {
+            placer = event.getEntity().getOffhandItem();
+        }
+        if (!(placer.getItem() instanceof WirelessPatternP2PPlacerItem)) {
+            return;
         }
 
+        var player = event.getEntity();
+        var level = event.getLevel();
+        if (!trySelect(player, placer, event.getPos(), level.dimension().location(),
+                player.isSecondaryUseActive(), level.isClientSide())) {
+            return;
+        }
+
+        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
+        event.setCanceled(true);
+    }
+
+    private static boolean trySelect(Player player, ItemStack placer, net.minecraft.core.BlockPos pos,
+                                     net.minecraft.resources.ResourceLocation dimension, boolean secondaryUse,
+                                     boolean clientSide) {
         P2PPlacerSelection selection = placer.get(ModContent.PLACER_SELECTION.get());
-        if (selection == null || selection.second() != null || !selection.dimension().equals(dimension)) {
-            return InteractionResult.PASS;
+        if (!secondaryUse && (selection == null || selection.second() != null || !selection.dimension().equals(dimension))) {
+            return false;
         }
 
-        P2PPlacerSelection completed = selection.complete(context.getClickedPos());
-        if (!context.getLevel().isClientSide()) {
-            P2PPlacerSelection.Validation validation = completed.validate();
-            if (validation == P2PPlacerSelection.Validation.VALID) {
-                placer.set(ModContent.PLACER_SELECTION.get(), completed);
-                player.displayClientMessage(Component.translatable(
-                        "message.ae2_batchcraft.wp2pp_placer.selection_set",
-                        completed.sizeX(), completed.sizeY(), completed.sizeZ()), true);
-            } else {
-                player.displayClientMessage(Component.translatable(
-                        "message.ae2_batchcraft.wp2pp_placer.selection_"
-                                + validation.name().toLowerCase(Locale.ROOT)), true);
-            }
+        if (clientSide) {
+            return true;
         }
-        return InteractionResult.sidedSuccess(context.getLevel().isClientSide());
+
+        if (secondaryUse) {
+            placer.set(ModContent.PLACER_SELECTION.get(), P2PPlacerSelection.start(dimension, pos));
+            P2PPlacerSettings settings = placer.getOrDefault(
+                    ModContent.PLACER_SETTINGS.get(), P2PPlacerSettings.DEFAULT);
+            placer.set(ModContent.PLACER_SETTINGS.get(), settings.resetOffsetsForNewSelection());
+            player.displayClientMessage(Component.translatable(
+                    "message.ae2_batchcraft.component_placer.first_set", pos.toShortString()), false);
+            return true;
+        }
+
+        P2PPlacerSelection completed = selection.complete(pos);
+        P2PPlacerSelection.Validation validation = completed.validate();
+        if (validation == P2PPlacerSelection.Validation.VALID) {
+            placer.set(ModContent.PLACER_SELECTION.get(), completed);
+            player.displayClientMessage(Component.translatable(
+                    "message.ae2_batchcraft.component_placer.selection_set",
+                    completed.sizeX(), completed.sizeY(), completed.sizeZ()), false);
+        } else {
+            player.displayClientMessage(Component.translatable(
+                    "message.ae2_batchcraft.component_placer.selection_"
+                            + validation.name().toLowerCase(Locale.ROOT)), false);
+        }
+        return true;
     }
 
     @Override
@@ -90,6 +125,12 @@ public final class WirelessPatternP2PPlacerItem extends WirelessTerminalItem {
                                                   @Nullable BlockHitResult hitResult) {
         return new P2PPlacerMenuHost(this, player, locator,
                 (p, subMenu) -> openFromInventory(p, locator, true));
+    }
+
+    @Override
+    public IUpgradeInventory getUpgrades(ItemStack stack) {
+        return UpgradeInventories.forItem(stack, 3, (changedStack, upgrades) ->
+                setAEMaxPowerMultiplier(changedStack, 1 + Upgrades.getEnergyCardMultiplier(upgrades)));
     }
 
     public static AppEngInternalInventory getMaterialInventory(ItemStack placer) {
@@ -112,15 +153,25 @@ public final class WirelessPatternP2PPlacerItem extends WirelessTerminalItem {
     }
 
     public static AppEngInternalInventory getCableFilterInventory(ItemStack placer) {
+        return getMarkerInventory(placer, ModContent.PLACER_CABLE, new CableFilter());
+    }
+
+    public static AppEngInternalInventory getPartFilterInventory(ItemStack placer) {
+        return getMarkerInventory(placer, ModContent.PLACER_PART, new PartFilter());
+    }
+
+    private static AppEngInternalInventory getMarkerInventory(ItemStack placer,
+                                                               Supplier<DataComponentType<ItemContainerContents>> component,
+                                                               IAEItemFilter filter) {
         var inventory = new AppEngInternalInventory(new InternalInventoryHost() {
             @Override
             public void saveChangedInventory(AppEngInternalInventory inventory) {
-                ItemStack cable = inventory.getStackInSlot(0);
-                if (cable.isEmpty()) {
-                    placer.remove(ModContent.PLACER_CABLE.get());
+                ItemStack marked = inventory.getStackInSlot(0);
+                if (marked.isEmpty()) {
+                    placer.remove(component.get());
                 } else {
-                    placer.set(ModContent.PLACER_CABLE.get(), ItemContainerContents.fromItems(
-                            java.util.List.of(cable.copyWithCount(1))));
+                    placer.set(component.get(), ItemContainerContents.fromItems(
+                            java.util.List.of(marked.copyWithCount(1))));
                 }
             }
 
@@ -130,17 +181,25 @@ public final class WirelessPatternP2PPlacerItem extends WirelessTerminalItem {
             }
         }, 1, 1);
         inventory.setEnableClientEvents(true);
-        inventory.setFilter(new CableFilter());
-        ItemStack cable = getMarkedCable(placer);
-        if (!cable.isEmpty()) {
-            inventory.fromItemContainerContents(ItemContainerContents.fromItems(java.util.List.of(cable)));
+        inventory.setFilter(filter);
+        ItemStack marked = getMarkedItem(placer, component.get());
+        if (!marked.isEmpty()) {
+            inventory.fromItemContainerContents(ItemContainerContents.fromItems(java.util.List.of(marked)));
         }
         return inventory;
     }
 
     public static ItemStack getMarkedCable(ItemStack placer) {
-        ItemStack cable = placer.getOrDefault(ModContent.PLACER_CABLE.get(), ItemContainerContents.EMPTY).copyOne();
-        return cable.isEmpty() ? cable : cable.copyWithCount(1);
+        return getMarkedItem(placer, ModContent.PLACER_CABLE.get());
+    }
+
+    public static ItemStack getMarkedPart(ItemStack placer) {
+        return getMarkedItem(placer, ModContent.PLACER_PART.get());
+    }
+
+    private static ItemStack getMarkedItem(ItemStack placer, DataComponentType<ItemContainerContents> component) {
+        ItemStack marked = placer.getOrDefault(component, ItemContainerContents.EMPTY).copyOne();
+        return marked.isEmpty() ? marked : marked.copyWithCount(1);
     }
 
     public static boolean isUsableCable(@Nullable ItemStack stack) {
@@ -152,9 +211,19 @@ public final class WirelessPatternP2PPlacerItem extends WirelessTerminalItem {
     }
 
     public static boolean isAllowedMaterial(ItemStack stack) {
-        return stack.is(ModContent.PATTERN_P2P_TUNNEL_INPUT.get())
-                || stack.is(ModContent.PATTERN_P2P_TUNNEL_OUTPUT.get())
-                || isUsableCable(stack);
+        return isUsableCable(stack) || isUsablePart(stack);
+    }
+
+    public static boolean isUsablePart(@Nullable ItemStack stack) {
+        if (stack == null || stack.isEmpty() || !(stack.getItem() instanceof IPartItem<?> partItem)) {
+            return false;
+        }
+        return !(partItem.createPart() instanceof ICablePart);
+    }
+
+    public static boolean hasCraftingCard(ItemStack placer) {
+        return placer.getItem() instanceof WirelessPatternP2PPlacerItem item
+                && item.getUpgrades(placer).isInstalled(AEItems.CRAFTING_CARD);
     }
 
     private static final class MaterialFilter implements IAEItemFilter {
@@ -168,6 +237,13 @@ public final class WirelessPatternP2PPlacerItem extends WirelessTerminalItem {
         @Override
         public boolean allowInsert(appeng.api.inventories.InternalInventory inventory, int slot, ItemStack stack) {
             return stack.isEmpty() || isUsableCable(stack);
+        }
+    }
+
+    private static final class PartFilter implements IAEItemFilter {
+        @Override
+        public boolean allowInsert(appeng.api.inventories.InternalInventory inventory, int slot, ItemStack stack) {
+            return stack.isEmpty() || isUsablePart(stack);
         }
     }
 }

@@ -28,7 +28,7 @@ public final class ModMenus {
                     "pattern_p2p_tunnel_energy", () -> PatternP2PTunnelEnergyMenu.TYPE);
     public static final DeferredHolder<MenuType<?>, MenuType<P2PPlacerMenu>>
             WIRELESS_PATTERN_P2P_PLACER = MENUS.register(
-                    "wp2pp_placer", () -> P2PPlacerMenu.TYPE);
+                    ModContent.COMPONENT_PLACER_ID, () -> P2PPlacerMenu.TYPE);
 
     private ModMenus() {
     }

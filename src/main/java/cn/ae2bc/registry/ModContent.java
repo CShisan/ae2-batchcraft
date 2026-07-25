@@ -25,6 +25,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import java.util.function.Supplier;
 
 public final class ModContent {
+    public static final String COMPONENT_PLACER_ID = "component_placer";
+
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Ae2bcMod.MOD_ID);
     private static final DeferredRegister<CreativeModeTab> TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Ae2bcMod.MOD_ID);
@@ -38,22 +40,27 @@ public final class ModContent {
                     .build());
 
     public static final Supplier<DataComponentType<P2PPlacerSettings>> PLACER_SETTINGS =
-            COMPONENTS.register("wp2pp_placer_settings", () -> DataComponentType.<P2PPlacerSettings>builder()
+            COMPONENTS.register("component_placer_settings", () -> DataComponentType.<P2PPlacerSettings>builder()
                     .persistent(P2PPlacerSettings.CODEC)
                     .networkSynchronized(P2PPlacerSettings.STREAM_CODEC)
                     .build());
     public static final Supplier<DataComponentType<P2PPlacerSelection>> PLACER_SELECTION =
-            COMPONENTS.register("wp2pp_placer_selection", () -> DataComponentType.<P2PPlacerSelection>builder()
+            COMPONENTS.register("component_placer_selection", () -> DataComponentType.<P2PPlacerSelection>builder()
                     .persistent(P2PPlacerSelection.CODEC)
                     .networkSynchronized(P2PPlacerSelection.STREAM_CODEC)
                     .build());
     public static final Supplier<DataComponentType<ItemContainerContents>> PLACER_CABLE =
-            COMPONENTS.register("wp2pp_placer_cable", () -> DataComponentType.<ItemContainerContents>builder()
+            COMPONENTS.register("component_placer_cable", () -> DataComponentType.<ItemContainerContents>builder()
+                    .persistent(ItemContainerContents.CODEC)
+                    .networkSynchronized(ItemContainerContents.STREAM_CODEC)
+                    .build());
+    public static final Supplier<DataComponentType<ItemContainerContents>> PLACER_PART =
+            COMPONENTS.register("component_placer_part", () -> DataComponentType.<ItemContainerContents>builder()
                     .persistent(ItemContainerContents.CODEC)
                     .networkSynchronized(ItemContainerContents.STREAM_CODEC)
                     .build());
     public static final Supplier<DataComponentType<Short>> PLACER_FREQUENCY =
-            COMPONENTS.register("wp2pp_placer_frequency", () -> DataComponentType.<Short>builder()
+            COMPONENTS.register("component_placer_frequency", () -> DataComponentType.<Short>builder()
                     .persistent(com.mojang.serialization.Codec.SHORT)
                     .networkSynchronized(ByteBufCodecs.SHORT)
                     .build());
@@ -68,7 +75,7 @@ public final class ModContent {
             ITEMS.register("pattern_p2p_tunnel_energy", () -> new PartItem<>(new Item.Properties(),
                     PatternP2PTunnelEnergyPart.class, PatternP2PTunnelEnergyPart::new));
     public static final DeferredHolder<Item, WirelessPatternP2PPlacerItem> WIRELESS_PATTERN_P2P_PLACER =
-            ITEMS.register("wp2pp_placer", () -> new WirelessPatternP2PPlacerItem(
+            ITEMS.register(COMPONENT_PLACER_ID, () -> new WirelessPatternP2PPlacerItem(
                     AEConfig.instance().getWirelessTerminalBattery(), new Item.Properties().stacksTo(1)));
 
     public static final Supplier<CreativeModeTab> CREATIVE_TAB = TABS.register("main", () -> CreativeModeTab.builder()

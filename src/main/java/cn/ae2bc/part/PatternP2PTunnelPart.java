@@ -25,6 +25,7 @@ import appeng.parts.p2p.P2PTunnelPart;
 import appeng.util.InteractionUtil;
 import appeng.util.SettingsFrom;
 import cn.ae2bc.Ae2bcMod;
+import cn.ae2bc.item.WirelessPatternP2PPlacerItem;
 import cn.ae2bc.logic.PatternP2PTunnelInputLogic;
 import cn.ae2bc.logic.PatternP2PTunnelOutputLogic;
 import cn.ae2bc.logic.RemoteReturnInventory;
@@ -219,7 +220,7 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
     }
 
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        if (event.getHand() != InteractionHand.MAIN_HAND || !event.getItemStack().isEmpty()) {
+        if (event.isCanceled() || event.getHand() != InteractionHand.MAIN_HAND || !event.getItemStack().isEmpty()) {
             return;
         }
 
@@ -340,6 +341,9 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
 
     @Override
     public boolean onUseItemOn(ItemStack heldItem, Player player, InteractionHand hand, Vec3 pos) {
+        if (heldItem.getItem() instanceof WirelessPatternP2PPlacerItem) {
+            return true;
+        }
         if (hand == InteractionHand.MAIN_HAND && heldItem.isEmpty()) {
             if (!isClientSide()) {
                 openConfigurationMenu(player);

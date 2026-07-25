@@ -2,22 +2,24 @@ package cn.ae2bc.menu;
 
 import appeng.api.ids.AEComponents;
 import appeng.api.implementations.items.IMemoryCard;
-import appeng.api.implementations.items.MemoryCardColors;
+import appeng.api.parts.IPartItem;
+import appeng.api.stacks.AEItemKey;
 import appeng.menu.AEBaseMenu;
+import appeng.menu.SlotSemantic;
 import appeng.menu.SlotSemantics;
 import appeng.menu.guisync.GuiSync;
 import appeng.menu.implementations.MenuTypeBuilder;
 import appeng.menu.slot.AppEngSlot;
 import appeng.menu.slot.FakeSlot;
 import appeng.api.inventories.InternalInventory;
-import appeng.items.tools.MemoryCardItem;
-import appeng.me.service.P2PService;
+import appeng.menu.me.crafting.CraftAmountMenu;
+import appeng.menu.slot.RestrictedInputSlot;
+import appeng.parts.p2p.P2PTunnelPart;
 import appeng.util.Platform;
 import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.item.WirelessPatternP2PPlacerItem;
 import cn.ae2bc.placer.P2PPlacementService;
 import cn.ae2bc.placer.P2PPlacerMenuHost;
-import cn.ae2bc.placer.P2PPlacerMode;
 import cn.ae2bc.placer.P2PPlacerSelection;
 import cn.ae2bc.placer.P2PPlacerSettings;
 import cn.ae2bc.registry.ModContent;
@@ -29,8 +31,14 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.List;
+
 public final class P2PPlacerMenu extends AEBaseMenu {
-    private static final String SET_MODE = "setMode";
+    public static final SlotSemantic CABLE_MARKER_SLOT = SlotSemantics.register(
+            "AE2_BATCHCRAFT_CABLE_MARKER", false);
+    public static final SlotSemantic PART_MARKER_SLOT = SlotSemantics.register(
+            "AE2_BATCHCRAFT_PART_MARKER", false);
+
     private static final String SET_DIRECTION = "setDirection";
     private static final String ADJUST_X = "adjustX";
     private static final String ADJUST_Y = "adjustY";
@@ -44,43 +52,53 @@ public final class P2PPlacerMenu extends AEBaseMenu {
     public static final MenuType<P2PPlacerMenu> TYPE = MenuTypeBuilder
             .create(P2PPlacerMenu::new, P2PPlacerMenuHost.class)
             .withMenuTitle(host -> host.getItemStack().getHoverName())
-            .buildUnregistered(ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "wp2pp_placer"));
+            .buildUnregistered(ResourceLocation.fromNamespaceAndPath(
+                    Ae2bcMod.MOD_ID, ModContent.COMPONENT_PLACER_ID));
 
     private final P2PPlacerMenuHost host;
 
     @GuiSync(0)
-    public P2PPlacerMode mode = P2PPlacerMode.OUTPUT;
+    public Direction direction = Direction.UP;
     @GuiSync(1)
-    public Direction direction = Direction.NORTH;
-    @GuiSync(2)
     public int offsetX;
-    @GuiSync(3)
+    @GuiSync(2)
     public int offsetY;
-    @GuiSync(4)
+    @GuiSync(3)
     public int offsetZ;
-    @GuiSync(5)
+    @GuiSync(4)
     public P2PPlacerSelection.Validation selectionState = P2PPlacerSelection.Validation.INCOMPLETE;
-    @GuiSync(6)
+    @GuiSync(5)
     public int sizeX;
-    @GuiSync(7)
+    @GuiSync(6)
     public int sizeY;
-    @GuiSync(8)
+    @GuiSync(7)
     public int sizeZ;
-    @GuiSync(9)
+    @GuiSync(8)
     public boolean hasCable;
+    @GuiSync(9)
+    public boolean hasPart;
     @GuiSync(10)
+    public boolean hasSelection;
+    @GuiSync(11)
     public int frequency;
 
     public P2PPlacerMenu(int id, Inventory playerInventory, P2PPlacerMenuHost host) {
         super(TYPE, id, playerInventory, host);
         this.host = host;
-        addSlot(new CableMarkerSlot(host.getCableFilter()), SlotSemantics.CONFIG);
+        addSlot(new CableMarkerSlot(host.getCableFilter(), Component.translatable(
+                "gui.ae2_batchcraft.component_placer.cable.tooltip")), CABLE_MARKER_SLOT);
+        addSlot(new CableMarkerSlot(host.getPartFilter(), Component.translatable(
+                "gui.ae2_batchcraft.component_placer.part.tooltip")), PART_MARKER_SLOT);
         for (int i = 0; i < WirelessPatternP2PPlacerItem.MATERIAL_SLOT_COUNT; i++) {
             addSlot(new AppEngSlot(host.getMaterials(), i), SlotSemantics.STORAGE);
         }
+        for (int i = 0; i < host.getUpgrades().size(); i++) {
+            addSlot(new RestrictedInputSlot(
+                    RestrictedInputSlot.PlacableItemType.UPGRADES,
+                    host.getUpgrades(), i), SlotSemantics.UPGRADE);
+        }
         createPlayerInventorySlots(playerInventory);
 
-        registerClientAction(SET_MODE, P2PPlacerMode.class, this::handleSetMode);
         registerClientAction(SET_DIRECTION, Direction.class, this::handleSetDirection);
         registerClientAction(ADJUST_X, Integer.class, value -> handleAdjustOffset(value, 0));
         registerClientAction(ADJUST_Y, Integer.class, value -> handleAdjustOffset(value, 1));
@@ -88,7 +106,7 @@ public final class P2PPlacerMenu extends AEBaseMenu {
         registerClientAction(RESET_OFFSETS, this::handleResetOffsets);
         registerClientAction(CLEAR_SELECTION, this::handleClearSelection);
         registerClientAction(EXECUTE, this::handleExecute);
-        registerClientAction(LOAD_FREQUENCY, Boolean.class, this::handleLoadFrequency);
+        registerClientAction(LOAD_FREQUENCY, this::handleLoadFrequency);
         registerClientAction(RESET_FREQUENCY, this::handleResetFrequency);
     }
 
@@ -97,7 +115,6 @@ public final class P2PPlacerMenu extends AEBaseMenu {
         if (isServerSide()) {
             var stack = host.getItemStack();
             var settings = stack.getOrDefault(ModContent.PLACER_SETTINGS.get(), P2PPlacerSettings.DEFAULT);
-            mode = settings.mode();
             direction = settings.direction();
             offsetX = settings.offsetX();
             offsetY = settings.offsetY();
@@ -105,26 +122,23 @@ public final class P2PPlacerMenu extends AEBaseMenu {
             var selection = stack.get(ModContent.PLACER_SELECTION.get());
             hasCable = WirelessPatternP2PPlacerItem.isUsableCable(
                     WirelessPatternP2PPlacerItem.getMarkedCable(stack));
+            hasPart = WirelessPatternP2PPlacerItem.isUsablePart(
+                    WirelessPatternP2PPlacerItem.getMarkedPart(stack));
             frequency = Short.toUnsignedInt(stack.getOrDefault(
                     ModContent.PLACER_FREQUENCY.get(), (short) 0));
             if (selection == null) {
                 selectionState = P2PPlacerSelection.Validation.INCOMPLETE;
                 sizeX = sizeY = sizeZ = 0;
+                hasSelection = false;
             } else {
                 selectionState = selection.validate();
                 sizeX = selection.sizeX();
                 sizeY = selection.sizeY();
                 sizeZ = selection.sizeZ();
+                hasSelection = true;
             }
         }
         super.broadcastChanges();
-    }
-
-    public void setMode(P2PPlacerMode value) {
-        if (value != null) {
-            mode = value;
-            sendClientAction(SET_MODE, value);
-        }
     }
 
     public void setDirection(Direction value) {
@@ -152,7 +166,8 @@ public final class P2PPlacerMenu extends AEBaseMenu {
     }
 
     public void resetOffsets() {
-        offsetX = offsetY = offsetZ = 0;
+        offsetX = offsetZ = 0;
+        offsetY = 1;
         sendClientAction(RESET_OFFSETS);
     }
 
@@ -164,20 +179,13 @@ public final class P2PPlacerMenu extends AEBaseMenu {
         sendClientAction(EXECUTE);
     }
 
-    public void loadFrequency(boolean createNew) {
-        sendClientAction(LOAD_FREQUENCY, createNew);
+    public void loadFrequency() {
+        sendClientAction(LOAD_FREQUENCY);
     }
 
     public void resetFrequency() {
         frequency = 0;
         sendClientAction(RESET_FREQUENCY);
-    }
-
-    private void handleSetMode(P2PPlacerMode value) {
-        if (isServerSide() && value != null) {
-            updateSettings(host.getItemStack().getOrDefault(
-                    ModContent.PLACER_SETTINGS.get(), P2PPlacerSettings.DEFAULT).withMode(value));
-        }
     }
 
     private void handleSetDirection(Direction value) {
@@ -219,64 +227,45 @@ public final class P2PPlacerMenu extends AEBaseMenu {
 
     private void handleExecute() {
         if (isServerSide() && getPlayer() instanceof ServerPlayer serverPlayer) {
-            var linkStatus = host.getLinkStatus();
-            if (!linkStatus.connected() && linkStatus.statusDescription() != null) {
-                serverPlayer.displayClientMessage(linkStatus.statusDescription(), false);
-            }
             var result = P2PPlacementService.place(serverPlayer, host);
+            if (!result.missingMaterial().isEmpty()) {
+                AEItemKey key = AEItemKey.of(result.missingMaterial());
+                if (key != null && getLocator() != null) {
+                    CraftAmountMenu.open(serverPlayer, getLocator(), key, result.missingAmount());
+                    return;
+                }
+            }
             serverPlayer.displayClientMessage(Component.translatable(
-                    "message.ae2_batchcraft.wp2pp_placer.result",
-                    result.placed(), result.occupied(), result.materialFailed(), result.placementFailed()), true);
+                    "message.ae2_batchcraft.component_placer.result",
+                    result.placed(), result.occupied(), result.materialFailed(), result.placementFailed()), false);
         }
     }
 
-    private void handleLoadFrequency(Boolean createNew) {
-        if (!isServerSide() || createNew == null) {
-            return;
-        }
-
-        if (createNew) {
-            var node = host.getActionableNode();
-            var grid = node == null ? null : node.getGrid();
-            if (grid == null || !host.getLinkStatus().connected()) {
-                getPlayer().displayClientMessage(Component.translatable(
-                        "message.ae2_batchcraft.wp2pp_placer.frequency.network_required"), true);
-                return;
-            }
-
-            short newFrequency = P2PService.get(grid).newFrequency();
-            setFrequency(newFrequency);
-            ItemStack card = findMemoryCard();
-            if (card.getItem() instanceof IMemoryCard) {
-                writeFrequencyToCard(card, newFrequency);
-            }
-            getPlayer().displayClientMessage(Component.translatable(
-                    "message.ae2_batchcraft.wp2pp_placer.frequency.generated",
-                    Platform.p2p().toHexString(newFrequency)), true);
+    private void handleLoadFrequency() {
+        if (!isServerSide()) {
             return;
         }
 
         ItemStack card = findMemoryCard();
         if (!(card.getItem() instanceof IMemoryCard)) {
             getPlayer().displayClientMessage(Component.translatable(
-                    "message.ae2_batchcraft.wp2pp_placer.frequency.no_card"), true);
+                    "message.ae2_batchcraft.component_placer.frequency.no_card"), false);
             return;
         }
 
         var storedType = card.get(AEComponents.EXPORTED_P2P_TYPE);
         var storedFrequency = card.get(AEComponents.EXPORTED_P2P_FREQUENCY);
-        if (storedFrequency == null
-                || (storedType != ModContent.PATTERN_P2P_TUNNEL_INPUT.get()
-                    && storedType != ModContent.PATTERN_P2P_TUNNEL_OUTPUT.get())) {
+        if (storedFrequency == null || !(storedType instanceof IPartItem<?> partItem)
+                || !P2PTunnelPart.class.isAssignableFrom(partItem.getPartClass())) {
             getPlayer().displayClientMessage(Component.translatable(
-                    "message.ae2_batchcraft.wp2pp_placer.frequency.invalid_card"), true);
+                    "message.ae2_batchcraft.component_placer.frequency.invalid_card"), false);
             return;
         }
 
         setFrequency(storedFrequency);
         getPlayer().displayClientMessage(Component.translatable(
-                "message.ae2_batchcraft.wp2pp_placer.frequency.loaded",
-                Platform.p2p().toHexString(storedFrequency)), true);
+                "message.ae2_batchcraft.component_placer.frequency.loaded",
+                Platform.p2p().toHexString(storedFrequency)), false);
     }
 
     private void handleResetFrequency() {
@@ -285,7 +274,7 @@ public final class P2PPlacerMenu extends AEBaseMenu {
         }
         setFrequency((short) 0);
         getPlayer().displayClientMessage(Component.translatable(
-                "message.ae2_batchcraft.wp2pp_placer.frequency.reset"), true);
+                "message.ae2_batchcraft.component_placer.frequency.reset"), false);
     }
 
     private ItemStack findMemoryCard() {
@@ -306,25 +295,14 @@ public final class P2PPlacerMenu extends AEBaseMenu {
         frequency = Short.toUnsignedInt(value);
     }
 
-    private static void writeFrequencyToCard(ItemStack card, short value) {
-        MemoryCardItem.clearCard(card);
-        card.set(AEComponents.EXPORTED_SETTINGS_SOURCE,
-                ModContent.PATTERN_P2P_TUNNEL_INPUT.get().getDescription());
-        card.set(AEComponents.EXPORTED_P2P_TYPE, ModContent.PATTERN_P2P_TUNNEL_INPUT.get());
-        card.set(AEComponents.EXPORTED_P2P_FREQUENCY, value);
-        var colors = Platform.p2p().toColors(value);
-        card.set(AEComponents.MEMORY_CARD_COLORS, new MemoryCardColors(
-                colors[0], colors[0], colors[1], colors[1],
-                colors[2], colors[2], colors[3], colors[3]));
-    }
-
     private void updateSettings(P2PPlacerSettings settings) {
         host.getItemStack().set(ModContent.PLACER_SETTINGS.get(), settings);
     }
 
     private static final class CableMarkerSlot extends FakeSlot {
-        private CableMarkerSlot(InternalInventory inventory) {
+        private CableMarkerSlot(InternalInventory inventory, Component tooltip) {
             super(inventory, 0);
+            setEmptyTooltip(() -> List.of(tooltip));
         }
 
         @Override

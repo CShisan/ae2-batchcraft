@@ -6,6 +6,7 @@ import appeng.client.gui.widgets.AE2Button;
 import appeng.client.gui.widgets.AECheckbox;
 import cn.ae2bc.logic.ReturnMode;
 import cn.ae2bc.menu.PatternP2PTunnelOutputMenu;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
@@ -21,14 +22,19 @@ public final class PatternP2PTunnelOutputScreen extends AEBaseScreen<PatternP2PT
         super(menu, playerInventory, title, style);
         for (ReturnMode mode : ReturnMode.values()) {
             String modeName = mode.getSerializedName();
-            returnButtons.put(mode, widgets.addButton("return" + Character.toUpperCase(modeName.charAt(0))
+            var button = widgets.addButton("return" + Character.toUpperCase(modeName.charAt(0))
                             + modeName.substring(1),
                     Component.translatable("gui.ae2_batchcraft.return_mode." + modeName),
-                    () -> menu.setReturnMode(mode)));
+                    () -> menu.setReturnMode(mode));
+            button.setTooltip(Tooltip.create(Component.translatable(
+                    "gui.ae2_batchcraft.return_mode." + modeName + ".tooltip")));
+            returnButtons.put(mode, button);
         }
         syncInputSettings = new AECheckbox(0, 0, 0, AECheckbox.SIZE, style,
                 Component.translatable("gui.ae2_batchcraft.sync_input_settings"));
         widgets.add("syncInputSettings", syncInputSettings);
+        syncInputSettings.setTooltip(Tooltip.create(Component.translatable(
+                "gui.ae2_batchcraft.sync_input_settings.tooltip")));
         syncInputSettings.setChangeListener(() -> menu.setSyncInputSettings(syncInputSettings.isSelected()));
     }
 
