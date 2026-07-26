@@ -8,7 +8,7 @@ public final class RoundRobin {
         if (size <= 0) {
             throw new IllegalArgumentException("size must be positive");
         }
-        return Math.floorMod(cursor + offset, size);
+        return (int) Math.floorMod((long) cursor + offset, size);
     }
 
     public static int advance(int successfulIndex, int size) {

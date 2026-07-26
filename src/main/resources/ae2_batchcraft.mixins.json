@@ -5,15 +5,24 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AEBaseMenuInvoker",
+    "GenericStackInvAccessor",
     "P2PTunnelPartMixin",
+    "PatternProviderLogicAccessor",
+    "PatternProviderLogicMixin",
+    "PatternProviderMenuMixin",
+    "PatternProviderTickerMixin",
     "PatternEncodingLogicMixin",
     "PatternEncodingTermMenuMixin"
   ],
   "client": [
     "AbstractContainerScreenInvoker",
+    "AEBaseScreenAccessor",
     "GuideMeMixin",
-    "GuideMixin",
-    "PatternEncodingTermScreenMixin"
+    "PatternEncodingTermScreenMixin",
+    "PatternProviderScreenMixin",
+    "PatternProviderUpgradePanelMixin",
+    "UpgradesPanelAccessor",
+    "WidgetContainerAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

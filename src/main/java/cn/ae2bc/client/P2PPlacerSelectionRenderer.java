@@ -1,6 +1,6 @@
 package cn.ae2bc.client;
 
-import cn.ae2bc.item.WirelessPatternP2PPlacerItem;
+import cn.ae2bc.item.WirelessComponentPlacerItem;
 import cn.ae2bc.placer.P2PPlacerSelection;
 import cn.ae2bc.placer.P2PPlacerSettings;
 import cn.ae2bc.registry.ModContent;
@@ -60,10 +60,10 @@ public final class P2PPlacerSelectionRenderer {
     }
 
     private static ItemStack findHeldPlacer(ItemStack mainHand, ItemStack offHand) {
-        if (mainHand.getItem() instanceof WirelessPatternP2PPlacerItem) {
+        if (mainHand.getItem() instanceof WirelessComponentPlacerItem) {
             return mainHand;
         }
-        if (offHand.getItem() instanceof WirelessPatternP2PPlacerItem) {
+        if (offHand.getItem() instanceof WirelessComponentPlacerItem) {
             return offHand;
         }
         return ItemStack.EMPTY;

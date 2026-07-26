@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "IRI",
+    "CBC",
+    "IRI"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "R": { "item": "minecraft:redstone" },
+    "C": { "item": "ae2:calculation_processor" },
+    "B": { "item": "ae2:crafting_card" }
+  },
+  "result": { "id": "ae2_batchcraft:product_extraction_card", "count": 1 }
+}

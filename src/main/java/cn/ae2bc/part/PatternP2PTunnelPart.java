@@ -16,6 +16,7 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.KeyCounter;
 import appeng.helpers.externalstorage.GenericStackFluidStorage;
 import appeng.helpers.externalstorage.GenericStackItemStorage;
+import appeng.helpers.patternprovider.PatternProviderLogicHost;
 import appeng.items.tools.MemoryCardItem;
 import appeng.me.service.P2PService;
 import appeng.menu.MenuOpener;
@@ -25,10 +26,12 @@ import appeng.parts.p2p.P2PTunnelPart;
 import appeng.util.InteractionUtil;
 import appeng.util.SettingsFrom;
 import cn.ae2bc.Ae2bcMod;
-import cn.ae2bc.item.WirelessPatternP2PPlacerItem;
+import cn.ae2bc.item.WirelessComponentPlacerItem;
 import cn.ae2bc.logic.PatternP2PTunnelInputLogic;
 import cn.ae2bc.logic.PatternP2PTunnelOutputLogic;
 import cn.ae2bc.logic.RemoteReturnInventory;
+import cn.ae2bc.logic.ProductExtractionSettings;
+import cn.ae2bc.extension.PatternProviderExtractionExtension;
 import cn.ae2bc.menu.PatternP2PTunnelInputMenu;
 import cn.ae2bc.menu.PatternP2PTunnelOutputMenu;
 import cn.ae2bc.registry.ModContent;
@@ -46,6 +49,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
 import net.neoforged.neoforge.energy.IEnergyStorage;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -122,6 +126,32 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
 
     public RemoteReturnInventory getReturnInventory() {
         return returnInventory;
+    }
+
+    public @Nullable ProductExtractionSettings getProductExtractionSettingsFromInput() {
+        if (!output) {
+            return null;
+        }
+        var input = getInput();
+        if (input == null || input.isOutput() || !input.hasConfiguredFrequency()) {
+            return null;
+        }
+        Direction side = input.getSide();
+        var level = input.getLevel();
+        if (side == null || !(level instanceof ServerLevel serverLevel)) {
+            return null;
+        }
+        var targetPos = input.getBlockEntity().getBlockPos().relative(side);
+        Direction targetSide = side.getOpposite();
+        var blockEntity = serverLevel.getBlockEntity(targetPos);
+        if (blockEntity instanceof PatternProviderLogicHost provider) {
+            return ((PatternProviderExtractionExtension) provider.getLogic()).ae2bc$getProductExtractionSettings();
+        }
+        var partHost = PartHelper.getPartHost(serverLevel, targetPos);
+        if (partHost != null && partHost.getPart(targetSide) instanceof PatternProviderLogicHost provider) {
+            return ((PatternProviderExtractionExtension) provider.getLogic()).ae2bc$getProductExtractionSettings();
+        }
+        return null;
     }
 
     public GenericStackItemStorage getReturnItemHandler() {
@@ -341,7 +371,7 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
 
     @Override
     public boolean onUseItemOn(ItemStack heldItem, Player player, InteractionHand hand, Vec3 pos) {
-        if (heldItem.getItem() instanceof WirelessPatternP2PPlacerItem) {
+        if (heldItem.getItem() instanceof WirelessComponentPlacerItem) {
             return true;
         }
         if (hand == InteractionHand.MAIN_HAND && heldItem.isEmpty()) {

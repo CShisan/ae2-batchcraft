@@ -35,10 +35,10 @@ import java.util.Locale;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-public final class WirelessPatternP2PPlacerItem extends WirelessTerminalItem {
+public final class WirelessComponentPlacerItem extends WirelessTerminalItem {
     public static final int MATERIAL_SLOT_COUNT = 9;
 
-    public WirelessPatternP2PPlacerItem(DoubleSupplier powerCapacity, Properties properties) {
+    public WirelessComponentPlacerItem(DoubleSupplier powerCapacity, Properties properties) {
         super(powerCapacity, properties);
     }
 
@@ -57,13 +57,13 @@ public final class WirelessPatternP2PPlacerItem extends WirelessTerminalItem {
 
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         ItemStack placer = event.getItemStack();
-        if (!(placer.getItem() instanceof WirelessPatternP2PPlacerItem)
+        if (!(placer.getItem() instanceof WirelessComponentPlacerItem)
                 && event.getHand() == net.minecraft.world.InteractionHand.MAIN_HAND
                 && placer.isEmpty()
-                && event.getEntity().getOffhandItem().getItem() instanceof WirelessPatternP2PPlacerItem) {
+                && event.getEntity().getOffhandItem().getItem() instanceof WirelessComponentPlacerItem) {
             placer = event.getEntity().getOffhandItem();
         }
-        if (!(placer.getItem() instanceof WirelessPatternP2PPlacerItem)) {
+        if (!(placer.getItem() instanceof WirelessComponentPlacerItem)) {
             return;
         }
 
@@ -94,7 +94,7 @@ public final class WirelessPatternP2PPlacerItem extends WirelessTerminalItem {
             placer.set(ModContent.PLACER_SELECTION.get(), P2PPlacerSelection.start(dimension, pos));
             P2PPlacerSettings settings = placer.getOrDefault(
                     ModContent.PLACER_SETTINGS.get(), P2PPlacerSettings.DEFAULT);
-            placer.set(ModContent.PLACER_SETTINGS.get(), settings.resetOffsetsForNewSelection());
+            placer.set(ModContent.PLACER_SETTINGS.get(), settings.resetOffsets());
             player.displayClientMessage(Component.translatable(
                     "message.ae2_batchcraft.component_placer.first_set", pos.toShortString()), false);
             return true;
@@ -222,7 +222,7 @@ public final class WirelessPatternP2PPlacerItem extends WirelessTerminalItem {
     }
 
     public static boolean hasCraftingCard(ItemStack placer) {
-        return placer.getItem() instanceof WirelessPatternP2PPlacerItem item
+        return placer.getItem() instanceof WirelessComponentPlacerItem item
                 && item.getUpgrades(placer).isInstalled(AEItems.CRAFTING_CARD);
     }
 

@@ -58,10 +58,6 @@ public record P2PPlacerSettings(
         return withOffsets(0, 1, 0);
     }
 
-    public P2PPlacerSettings resetOffsetsForNewSelection() {
-        return withOffsets(0, 1, 0);
-    }
-
     public static int clampOffset(int value) {
         return Math.clamp(value, -MAX_OFFSET, MAX_OFFSET);
     }

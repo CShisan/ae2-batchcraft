@@ -27,10 +27,14 @@ class GuidePageResourceTest {
             "data/ae2_batchcraft/recipe/component_placer.json";
     private static final String ENERGY_TUNNEL_RECIPE =
             "data/ae2_batchcraft/recipe/pattern_p2p_tunnel_energy.json";
+    private static final String PRODUCT_EXTRACTION_RECIPE =
+            "data/ae2_batchcraft/recipe/product_extraction_card.json";
     private static final String PLACER_SCREEN =
             "assets/ae2/screens/ae2_batchcraft/component_placer.json";
     private static final String ENERGY_TUNNEL_SCREEN =
             "assets/ae2/screens/ae2_batchcraft/pattern_p2p_tunnel_energy.json";
+    private static final String PRODUCT_EXTRACTION_SCREEN =
+            "assets/ae2/screens/ae2_batchcraft/product_extraction.json";
     private static final String AE2_PATTERN_PROVIDER_TAG = "data/ae2/tags/item/pattern_provider.json";
 
     @Test
@@ -116,6 +120,19 @@ class GuidePageResourceTest {
         assertTrue(screen.contains("\"active\""));
         assertTrue(screen.contains("gui.ae2_batchcraft.energy.mode_value"));
         assertTrue(screen.contains("gui.ae2_batchcraft.energy.pull_interval"));
+    }
+
+    @Test
+    void productExtractionResourcesExposeTheCardAndItsSettings() throws Exception {
+        String recipe = readText(PRODUCT_EXTRACTION_RECIPE);
+        assertTrue(recipe.contains("\"item\": \"ae2:crafting_card\""));
+        assertTrue(recipe.contains("\"id\": \"ae2_batchcraft:product_extraction_card\""));
+
+        String screen = readText(PRODUCT_EXTRACTION_SCREEN);
+        assertTrue(screen.contains("\"AE2_BATCHCRAFT_PRODUCT_MARKER\""));
+        assertTrue(screen.contains("\"intervalReset\""));
+        assertTrue(screen.contains("\"amountReset\""));
+        assertTrue(screen.contains("\"modeToggle\""));
     }
 
     @Test

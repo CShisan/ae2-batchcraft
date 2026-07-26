@@ -22,6 +22,7 @@ public final class RemoteReturnInventory implements GenericInternalInventory, ME
     private final Supplier<@Nullable GenericInternalInventory> targetSupplier;
     private final BiFunction<AEKey, Long, Long> amountFilter;
     private final Consumer<GenericStack> insertionListener;
+    private boolean productExtractionBypass;
 
     public RemoteReturnInventory(Supplier<@Nullable GenericInternalInventory> targetSupplier,
                                  BiFunction<AEKey, Long, Long> amountFilter,
@@ -190,6 +191,13 @@ public final class RemoteReturnInventory implements GenericInternalInventory, ME
         if (amount <= 0) {
             return 0;
         }
+        if (productExtractionBypass) {
+            return amount;
+        }
         return Math.clamp(amountFilter.apply(what, amount), 0, amount);
+    }
+
+    void setProductExtractionBypass(boolean enabled) {
+        productExtractionBypass = enabled;
     }
 }

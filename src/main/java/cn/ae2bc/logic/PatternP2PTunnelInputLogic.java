@@ -11,6 +11,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Owns the main-side task admission and round-robin dispatch.
@@ -59,6 +60,7 @@ public final class PatternP2PTunnelInputLogic {
     }
 
     public void setReturnMode(ReturnMode mode) {
+        Objects.requireNonNull(mode, "mode");
         if (returnMode == mode) {
             return;
         }

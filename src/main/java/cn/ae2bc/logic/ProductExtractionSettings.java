@@ -1,0 +1,46 @@
+package cn.ae2bc.logic;
+
+import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
+import net.minecraft.world.item.ItemStack;
+
+import java.util.Objects;
+import java.util.Set;
+
+/** Immutable server-side view of a pattern provider's product extraction settings. */
+public record ProductExtractionSettings(boolean enabled, int interval, int amount,
+                                        boolean whitelist, Set<AEItemKey> markers) {
+    public static final int DEFAULT_INTERVAL = 20;
+    public static final int DEFAULT_AMOUNT = 64;
+    public static final int MIN_INTERVAL = 1;
+    public static final int MAX_INTERVAL = 2000;
+    public static final int MIN_AMOUNT = 1;
+    public static final int MAX_AMOUNT = 64;
+    public static final int MARKER_SLOT_COUNT = 18;
+
+    public ProductExtractionSettings {
+        interval = clampInterval(interval);
+        amount = clampAmount(amount);
+        markers = Set.copyOf(Objects.requireNonNull(markers, "markers"));
+    }
+
+    public static int clampInterval(int value) {
+        return Math.clamp(value, MIN_INTERVAL, MAX_INTERVAL);
+    }
+
+    public static int clampAmount(int value) {
+        return Math.clamp(value, MIN_AMOUNT, MAX_AMOUNT);
+    }
+
+    public boolean allows(ItemStack stack) {
+        return allows(AEItemKey.of(stack));
+    }
+
+    public boolean allows(AEKey key) {
+        if (key == null) {
+            return false;
+        }
+        boolean marked = key instanceof AEItemKey itemKey && markers.contains(itemKey);
+        return whitelist ? marked : !marked;
+    }
+}

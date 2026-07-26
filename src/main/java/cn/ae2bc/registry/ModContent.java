@@ -2,8 +2,9 @@ package cn.ae2bc.registry;
 
 import appeng.core.AEConfig;
 import appeng.api.config.Actionable;
+import appeng.api.upgrades.Upgrades;
 import appeng.items.parts.PartItem;
-import cn.ae2bc.item.WirelessPatternP2PPlacerItem;
+import cn.ae2bc.item.WirelessComponentPlacerItem;
 import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.part.PatternP2PTunnelPart;
 import cn.ae2bc.part.PatternP2PTunnelEnergyPart;
@@ -74,8 +75,10 @@ public final class ModContent {
     public static final DeferredHolder<Item, PartItem<PatternP2PTunnelEnergyPart>> PATTERN_P2P_TUNNEL_ENERGY =
             ITEMS.register("pattern_p2p_tunnel_energy", () -> new PartItem<>(new Item.Properties(),
                     PatternP2PTunnelEnergyPart.class, PatternP2PTunnelEnergyPart::new));
-    public static final DeferredHolder<Item, WirelessPatternP2PPlacerItem> WIRELESS_PATTERN_P2P_PLACER =
-            ITEMS.register(COMPONENT_PLACER_ID, () -> new WirelessPatternP2PPlacerItem(
+    public static final DeferredHolder<Item, Item> PRODUCT_EXTRACTION_CARD =
+            ITEMS.register("product_extraction_card", () -> Upgrades.createUpgradeCardItem(new Item.Properties()));
+    public static final DeferredHolder<Item, WirelessComponentPlacerItem> COMPONENT_PLACER =
+            ITEMS.register(COMPONENT_PLACER_ID, () -> new WirelessComponentPlacerItem(
                     AEConfig.instance().getWirelessTerminalBattery(), new Item.Properties().stacksTo(1)));
 
     public static final Supplier<CreativeModeTab> CREATIVE_TAB = TABS.register("main", () -> CreativeModeTab.builder()
@@ -85,7 +88,8 @@ public final class ModContent {
                 output.accept(PATTERN_P2P_TUNNEL_INPUT.get());
                 output.accept(PATTERN_P2P_TUNNEL_OUTPUT.get());
                 output.accept(PATTERN_P2P_TUNNEL_ENERGY.get());
-                var placer = WIRELESS_PATTERN_P2P_PLACER.get();
+                output.accept(PRODUCT_EXTRACTION_CARD.get());
+                var placer = COMPONENT_PLACER.get();
                 ItemStack chargedPlacer = placer.getDefaultInstance();
                 placer.injectAEPower(chargedPlacer, placer.getAEMaxPower(chargedPlacer), Actionable.MODULATE);
                 output.accept(chargedPlacer);

@@ -33,6 +33,8 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -57,6 +59,8 @@ public final class PatternP2PTunnelOutputLogic {
     private final List<PendingInput> pendingInputs = new ArrayList<>();
     private final ReturnBatchTracker<AEKey, AEItemKey> returnBatch = new ReturnBatchTracker<>();
     private @Nullable TargetCache targetCache;
+    private @Nullable BlockCapabilityCache<IItemHandler, Direction> productExtractionTargetCache;
+    private long lastProductExtractionTick = Long.MIN_VALUE;
     private ReturnMode returnMode = ReturnMode.UNBLOCKED;
     private boolean syncInputSettings = true;
 
@@ -81,6 +85,7 @@ public final class PatternP2PTunnelOutputLogic {
     }
 
     public void setReturnMode(ReturnMode mode) {
+        Objects.requireNonNull(mode, "mode");
         if (returnMode != mode) {
             boolean wasAvailable = canAcceptTask();
             returnMode = mode;
@@ -104,6 +109,7 @@ public final class PatternP2PTunnelOutputLogic {
     }
 
     public void applyInputSettings(ReturnMode mode) {
+        Objects.requireNonNull(mode, "mode");
         if (!syncInputSettings || returnMode == mode) {
             return;
         }
@@ -498,6 +504,38 @@ public final class PatternP2PTunnelOutputLogic {
         mainNode.ifPresent((grid, node) -> grid.getTickManager().alertDevice(node));
     }
 
+    private ProductExtractionTickState tickProductExtraction() {
+        var settings = output.getProductExtractionSettingsFromInput();
+        if (settings == null || !settings.enabled() || !mainNode.isActive()
+                || !(output.getLevel() instanceof ServerLevel level)) {
+            return ProductExtractionTickState.DISABLED;
+        }
+        long tick = level.getGameTime();
+        if (lastProductExtractionTick != Long.MIN_VALUE
+                && tick - lastProductExtractionTick < settings.interval()) {
+            return ProductExtractionTickState.WAITING;
+        }
+        lastProductExtractionTick = tick;
+        Direction side = output.getSide();
+        if (side == null) {
+            return ProductExtractionTickState.ATTEMPTED;
+        }
+        var targetPos = output.getBlockEntity().getBlockPos().relative(side);
+        Direction targetSide = side.getOpposite();
+        if (productExtractionTargetCache == null
+                || productExtractionTargetCache.level() != level
+                || !productExtractionTargetCache.pos().equals(targetPos)
+                || productExtractionTargetCache.context() != targetSide) {
+            productExtractionTargetCache = BlockCapabilityCache.create(
+                    Capabilities.ItemHandler.BLOCK, level, targetPos, targetSide);
+        }
+        var source = productExtractionTargetCache.getCapability();
+        if (source != null) {
+            ProductExtractor.extract(source, output.getReturnInventory(), settings);
+        }
+        return ProductExtractionTickState.ATTEMPTED;
+    }
+
     private record RoutedInput(GenericStack stack, @Nullable Direction face) {
     }
 
@@ -575,15 +613,21 @@ public final class PatternP2PTunnelOutputLogic {
     private final class RetryTicker implements IGridTickable {
         @Override
         public TickingRequest getTickingRequest(IGridNode node) {
-            return new TickingRequest(TickRates.Interface, pendingInputs.isEmpty());
+            // Periodically wake sleeping outputs so a newly installed provider card is discovered.
+            return new TickingRequest(1, TickRates.Interface.getMax(), false, TickRates.Interface.getMax());
         }
 
         @Override
         public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
-            if (pendingInputs.isEmpty() || !mainNode.isActive()) {
-                return TickRateModulation.SLEEP;
+            boolean retryProgress = !pendingInputs.isEmpty() && mainNode.isActive() && retryPending();
+            ProductExtractionTickState extraction = tickProductExtraction();
+            if (retryProgress || extraction == ProductExtractionTickState.ATTEMPTED) {
+                return TickRateModulation.URGENT;
             }
-            return retryPending() ? TickRateModulation.URGENT : TickRateModulation.SLOWER;
+            if (extraction == ProductExtractionTickState.WAITING) {
+                return TickRateModulation.SLOWER;
+            }
+            return pendingInputs.isEmpty() ? TickRateModulation.IDLE : TickRateModulation.SLOWER;
         }
     }
 }

@@ -10,7 +10,7 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.StorageHelper;
 import appeng.me.helpers.PlayerSource;
 import appeng.me.service.P2PService;
-import cn.ae2bc.item.WirelessPatternP2PPlacerItem;
+import cn.ae2bc.item.WirelessComponentPlacerItem;
 import cn.ae2bc.registry.ModContent;
 import appeng.parts.p2p.P2PTunnelPart;
 import net.minecraft.core.BlockPos;
@@ -36,13 +36,13 @@ public final class P2PPlacementService {
         P2PPlacerSelection selection = placer.get(ModContent.PLACER_SELECTION.get());
         P2PPlacerSettings settings = placer.getOrDefault(
                 ModContent.PLACER_SETTINGS.get(), P2PPlacerSettings.DEFAULT);
-        ItemStack cable = WirelessPatternP2PPlacerItem.getMarkedCable(placer);
-        ItemStack part = WirelessPatternP2PPlacerItem.getMarkedPart(placer);
+        ItemStack cable = WirelessComponentPlacerItem.getMarkedCable(placer);
+        ItemStack part = WirelessComponentPlacerItem.getMarkedPart(placer);
         short frequency = placer.getOrDefault(ModContent.PLACER_FREQUENCY.get(), (short) 0);
 
         if (selection == null || !selection.dimension().equals(level.dimension().location())
-                || !WirelessPatternP2PPlacerItem.isUsableCable(cable)
-                || !WirelessPatternP2PPlacerItem.isUsablePart(part)) {
+                || !WirelessComponentPlacerItem.isUsableCable(cable)
+                || !WirelessComponentPlacerItem.isUsablePart(part)) {
             return Result.empty();
         }
         var positions = selection.positions(settings);
@@ -55,7 +55,7 @@ public final class P2PPlacementService {
         PlayerSource actionSource = new PlayerSource(player);
 
         int required = countEligibleTargets(level, player, positions);
-        if (WirelessPatternP2PPlacerItem.hasCraftingCard(placer)) {
+        if (WirelessComponentPlacerItem.hasCraftingCard(placer)) {
             MissingMaterial cableMissing = findMissingMaterial(menuHost, actionSource, cable, required);
             if (cableMissing != null) {
                 return Result.missing(cableMissing.stack(), cableMissing.amount());

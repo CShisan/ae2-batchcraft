@@ -4,6 +4,7 @@ import appeng.api.ids.AEComponents;
 import appeng.api.implementations.items.IMemoryCard;
 import appeng.api.parts.IPartItem;
 import appeng.api.stacks.AEItemKey;
+import appeng.api.upgrades.IUpgradeInventory;
 import appeng.menu.AEBaseMenu;
 import appeng.menu.SlotSemantic;
 import appeng.menu.SlotSemantics;
@@ -17,7 +18,7 @@ import appeng.menu.slot.RestrictedInputSlot;
 import appeng.parts.p2p.P2PTunnelPart;
 import appeng.util.Platform;
 import cn.ae2bc.Ae2bcMod;
-import cn.ae2bc.item.WirelessPatternP2PPlacerItem;
+import cn.ae2bc.item.WirelessComponentPlacerItem;
 import cn.ae2bc.placer.P2PPlacementService;
 import cn.ae2bc.placer.P2PPlacerMenuHost;
 import cn.ae2bc.placer.P2PPlacerSelection;
@@ -89,7 +90,7 @@ public final class P2PPlacerMenu extends AEBaseMenu {
                 "gui.ae2_batchcraft.component_placer.cable.tooltip")), CABLE_MARKER_SLOT);
         addSlot(new CableMarkerSlot(host.getPartFilter(), Component.translatable(
                 "gui.ae2_batchcraft.component_placer.part.tooltip")), PART_MARKER_SLOT);
-        for (int i = 0; i < WirelessPatternP2PPlacerItem.MATERIAL_SLOT_COUNT; i++) {
+        for (int i = 0; i < WirelessComponentPlacerItem.MATERIAL_SLOT_COUNT; i++) {
             addSlot(new AppEngSlot(host.getMaterials(), i), SlotSemantics.STORAGE);
         }
         for (int i = 0; i < host.getUpgrades().size(); i++) {
@@ -110,6 +111,10 @@ public final class P2PPlacerMenu extends AEBaseMenu {
         registerClientAction(RESET_FREQUENCY, this::handleResetFrequency);
     }
 
+    public IUpgradeInventory getUpgrades() {
+        return host.getUpgrades();
+    }
+
     @Override
     public void broadcastChanges() {
         if (isServerSide()) {
@@ -120,10 +125,10 @@ public final class P2PPlacerMenu extends AEBaseMenu {
             offsetY = settings.offsetY();
             offsetZ = settings.offsetZ();
             var selection = stack.get(ModContent.PLACER_SELECTION.get());
-            hasCable = WirelessPatternP2PPlacerItem.isUsableCable(
-                    WirelessPatternP2PPlacerItem.getMarkedCable(stack));
-            hasPart = WirelessPatternP2PPlacerItem.isUsablePart(
-                    WirelessPatternP2PPlacerItem.getMarkedPart(stack));
+            hasCable = WirelessComponentPlacerItem.isUsableCable(
+                    WirelessComponentPlacerItem.getMarkedCable(stack));
+            hasPart = WirelessComponentPlacerItem.isUsablePart(
+                    WirelessComponentPlacerItem.getMarkedPart(stack));
             frequency = Short.toUnsignedInt(stack.getOrDefault(
                     ModContent.PLACER_FREQUENCY.get(), (short) 0));
             if (selection == null) {
@@ -204,9 +209,9 @@ public final class P2PPlacerMenu extends AEBaseMenu {
         int y = settings.offsetY();
         int z = settings.offsetZ();
         switch (axis) {
-            case 0 -> x = P2PPlacerSettings.clampOffset(x + value);
-            case 1 -> y = P2PPlacerSettings.clampOffset(y + value);
-            case 2 -> z = P2PPlacerSettings.clampOffset(z + value);
+            case 0 -> x = addOffset(x, value);
+            case 1 -> y = addOffset(y, value);
+            case 2 -> z = addOffset(z, value);
             default -> { return; }
         }
         updateSettings(settings.withOffsets(x, y, z));
@@ -297,6 +302,11 @@ public final class P2PPlacerMenu extends AEBaseMenu {
 
     private void updateSettings(P2PPlacerSettings settings) {
         host.getItemStack().set(ModContent.PLACER_SETTINGS.get(), settings);
+    }
+
+    private static int addOffset(int offset, int delta) {
+        return (int) Math.clamp((long) offset + delta,
+                -P2PPlacerSettings.MAX_OFFSET, P2PPlacerSettings.MAX_OFFSET);
     }
 
     private static final class CableMarkerSlot extends FakeSlot {

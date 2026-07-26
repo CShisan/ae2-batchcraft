@@ -6,6 +6,7 @@ import cn.ae2bc.menu.PatternP2PTunnelInputMenu;
 import cn.ae2bc.menu.PatternP2PTunnelOutputMenu;
 import cn.ae2bc.menu.PatternP2PTunnelEnergyMenu;
 import cn.ae2bc.menu.P2PPlacerMenu;
+import cn.ae2bc.menu.ProductExtractionMenu;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -18,6 +19,7 @@ public final class Ae2bcClient {
     private static final String OUTPUT_SCREEN_STYLE = "/screens/ae2_batchcraft/pattern_p2p_tunnel_output.json";
     private static final String PLACER_SCREEN_STYLE = "/screens/ae2_batchcraft/component_placer.json";
     private static final String ENERGY_SCREEN_STYLE = "/screens/ae2_batchcraft/pattern_p2p_tunnel_energy.json";
+    private static final String PRODUCT_EXTRACTION_SCREEN_STYLE = "/screens/ae2_batchcraft/product_extraction.json";
 
     public Ae2bcClient(IEventBus modBus) {
         modBus.addListener(Ae2bcClient::registerScreens);
@@ -41,5 +43,9 @@ public final class Ae2bcClient {
                 P2PPlacerMenu.TYPE, (menu, inventory, title) ->
                         new P2PPlacerScreen(menu, inventory, title,
                                 StyleManager.loadStyleDoc(PLACER_SCREEN_STYLE)));
+        event.<ProductExtractionMenu, ProductExtractionScreen>register(
+                ProductExtractionMenu.TYPE, (menu, inventory, title) ->
+                        new ProductExtractionScreen(menu, inventory, title,
+                                StyleManager.loadStyleDoc(PRODUCT_EXTRACTION_SCREEN_STYLE)));
     }
 }

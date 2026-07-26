@@ -9,6 +9,7 @@ import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.extension.PatternEncodingLogicExtension;
 import cn.ae2bc.extension.PatternEncodingTermMenuExtension;
 import net.minecraft.core.Direction;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -111,10 +112,12 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
     @Unique
     private void ae2bc$handleSetInputDirection(int[] action) {
         PatternEncodingTermMenu menu = (PatternEncodingTermMenu) (Object) this;
+        Slot[] inputSlots = menu.getProcessingInputSlots();
         if (menu.isClientSide() || action == null || action.length != 2
                 || menu.getMode() != EncodingMode.PROCESSING
                 || !InputDirectionData.isValidSlot(action[0])
-                || !menu.getProcessingInputSlots()[action[0]].hasItem()) {
+                || action[0] >= inputSlots.length
+                || !inputSlots[action[0]].hasItem()) {
             return;
         }
         InputDirectionData current = ((PatternEncodingLogicExtension) encodingLogic).ae2bc$getInputDirections();

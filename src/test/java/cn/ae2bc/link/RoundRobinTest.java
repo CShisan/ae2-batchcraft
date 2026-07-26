@@ -30,4 +30,10 @@ class RoundRobinTest {
     void rejectsEmptyTargetList() {
         assertThrows(IllegalArgumentException.class, () -> RoundRobin.index(0, 0, 0));
     }
+
+    @Test
+    void handlesCursorAdditionWithoutOverflow() {
+        assertEquals(1, RoundRobin.index(Integer.MAX_VALUE, 2, 4));
+        assertEquals(2, RoundRobin.index(Integer.MIN_VALUE, -2, 4));
+    }
 }

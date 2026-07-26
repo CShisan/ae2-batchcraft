@@ -2,11 +2,13 @@ package cn.ae2bc.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import appeng.api.upgrades.Upgrades;
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.Icon;
 import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.AE2Button;
 import appeng.client.gui.widgets.UpgradesPanel;
+import appeng.core.localization.GuiText;
 import appeng.menu.SlotSemantics;
 import appeng.util.Platform;
 import cn.ae2bc.menu.P2PPlacerMenu;
@@ -23,6 +25,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +48,7 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
                 "gui.ae2_batchcraft.component_placer.frequency.tooltip")));
         widgets.add("frequency", frequencyWidget);
         widgets.add("upgrades", new UpgradesPanel(menu.getSlots(SlotSemantics.UPGRADE),
-                () -> List.of(Component.translatable("gui.ae2_batchcraft.component_placer.upgrades"))));
+                this::getCompatibleUpgrades));
 
         Direction front = playerInventory.player.getDirection();
         Direction left = front.getCounterClockWise();
@@ -140,6 +143,13 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
                     "gui.ae2_batchcraft.component_placer.selection.volume");
             case TOO_LARGE -> Component.translatable("gui.ae2_batchcraft.component_placer.selection.too_large");
         };
+    }
+
+    private List<Component> getCompatibleUpgrades() {
+        var tooltip = new ArrayList<Component>();
+        tooltip.add(GuiText.CompatibleUpgrades.text());
+        tooltip.addAll(Upgrades.getTooltipLinesForMachine(menu.getUpgrades().getUpgradableItem()));
+        return tooltip;
     }
 
     private void addDirectionButton(String widgetId, Direction direction, Component label) {

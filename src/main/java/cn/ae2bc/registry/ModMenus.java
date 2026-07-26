@@ -5,6 +5,7 @@ import cn.ae2bc.menu.P2PPlacerMenu;
 import cn.ae2bc.menu.PatternP2PTunnelEnergyMenu;
 import cn.ae2bc.menu.PatternP2PTunnelInputMenu;
 import cn.ae2bc.menu.PatternP2PTunnelOutputMenu;
+import cn.ae2bc.menu.ProductExtractionMenu;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -27,8 +28,10 @@ public final class ModMenus {
             PATTERN_P2P_TUNNEL_ENERGY = MENUS.register(
                     "pattern_p2p_tunnel_energy", () -> PatternP2PTunnelEnergyMenu.TYPE);
     public static final DeferredHolder<MenuType<?>, MenuType<P2PPlacerMenu>>
-            WIRELESS_PATTERN_P2P_PLACER = MENUS.register(
+            COMPONENT_PLACER = MENUS.register(
                     ModContent.COMPONENT_PLACER_ID, () -> P2PPlacerMenu.TYPE);
+    public static final DeferredHolder<MenuType<?>, MenuType<ProductExtractionMenu>>
+            PRODUCT_EXTRACTION = MENUS.register("product_extraction", () -> ProductExtractionMenu.TYPE);
 
     private ModMenus() {
     }
@@ -41,7 +44,8 @@ public final class ModMenus {
         verifyRegistration(PATTERN_P2P_TUNNEL_INPUT);
         verifyRegistration(PATTERN_P2P_TUNNEL_OUTPUT);
         verifyRegistration(PATTERN_P2P_TUNNEL_ENERGY);
-        verifyRegistration(WIRELESS_PATTERN_P2P_PLACER);
+        verifyRegistration(COMPONENT_PLACER);
+        verifyRegistration(PRODUCT_EXTRACTION);
         Ae2bcMod.LOGGER.info("Verified AE2 BatchCraft menu registrations");
     }
 
