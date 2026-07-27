@@ -131,6 +131,8 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
         setTextContent("offsetZ", Component.translatable(
                 "gui.ae2_batchcraft.component_placer.offset_value", "Z", menu.offsetZ));
         setTextContent("frequencyText", Platform.p2p().toColoredHexString((short) menu.frequency));
+        setTextHidden("aeLinkWarning", menu.aeConnected);
+        setTextHidden("aeLinkConnected", !menu.aeConnected);
         execute.setTooltip(Tooltip.create(selectionStatus()));
     }
 

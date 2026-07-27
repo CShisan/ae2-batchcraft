@@ -55,7 +55,7 @@ public final class P2PPlacementService {
         PlayerSource actionSource = new PlayerSource(player);
 
         int required = countEligibleTargets(level, player, positions);
-        if (WirelessComponentPlacerItem.hasCraftingCard(placer)) {
+        if (WirelessComponentPlacerItem.hasCraftingCard(placer) && menuHost.getLinkStatus().connected()) {
             MissingMaterial cableMissing = findMissingMaterial(menuHost, actionSource, cable, required);
             if (cableMissing != null) {
                 return Result.missing(cableMissing.stack(), cableMissing.amount());

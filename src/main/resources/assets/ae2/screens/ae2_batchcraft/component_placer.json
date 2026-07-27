@@ -111,6 +111,28 @@
         "top": 102
       }
     },
+    "aeLinkWarning": {
+      "text": {
+        "translate": "gui.ae2_batchcraft.component_placer.not_linked",
+        "color": "red"
+      },
+      "position": {
+        "left": 168,
+        "top": 102
+      },
+      "align": "RIGHT"
+    },
+    "aeLinkConnected": {
+      "text": {
+        "translate": "gui.ae2.Linked",
+        "color": "green"
+      },
+      "position": {
+        "left": 168,
+        "top": 102
+      },
+      "align": "RIGHT"
+    },
     "player_inventory_title": {
       "text": {
         "translate": "container.inventory"

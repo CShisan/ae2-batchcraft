@@ -82,6 +82,8 @@ public final class P2PPlacerMenu extends AEBaseMenu {
     public boolean hasSelection;
     @GuiSync(11)
     public int frequency;
+    @GuiSync(12)
+    public boolean aeConnected;
 
     public P2PPlacerMenu(int id, Inventory playerInventory, P2PPlacerMenuHost host) {
         super(TYPE, id, playerInventory, host);
@@ -119,6 +121,7 @@ public final class P2PPlacerMenu extends AEBaseMenu {
     public void broadcastChanges() {
         if (isServerSide()) {
             var stack = host.getItemStack();
+            aeConnected = host.getLinkStatus().connected();
             var settings = stack.getOrDefault(ModContent.PLACER_SETTINGS.get(), P2PPlacerSettings.DEFAULT);
             direction = settings.direction();
             offsetX = settings.offsetX();
@@ -233,7 +236,7 @@ public final class P2PPlacerMenu extends AEBaseMenu {
     private void handleExecute() {
         if (isServerSide() && getPlayer() instanceof ServerPlayer serverPlayer) {
             var result = P2PPlacementService.place(serverPlayer, host);
-            if (!result.missingMaterial().isEmpty()) {
+            if (host.getLinkStatus().connected() && !result.missingMaterial().isEmpty()) {
                 AEItemKey key = AEItemKey.of(result.missingMaterial());
                 if (key != null && getLocator() != null) {
                     CraftAmountMenu.open(serverPlayer, getLocator(), key, result.missingAmount());
