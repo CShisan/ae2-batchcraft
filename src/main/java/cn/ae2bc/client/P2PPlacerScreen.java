@@ -106,6 +106,12 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
     }
 
     @Override
+    public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
+        guiGraphics.hLine(7, imageWidth - 8, 17, 0xFF808080);
+        guiGraphics.hLine(7, imageWidth - 8, 18, 0xFFFFFFFF);
+    }
+
+    @Override
     protected void updateBeforeRender() {
         super.updateBeforeRender();
         for (var entry : directionButtons.entrySet()) {

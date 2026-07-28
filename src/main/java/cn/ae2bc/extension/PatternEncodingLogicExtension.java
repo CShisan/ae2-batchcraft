@@ -1,9 +1,9 @@
 package cn.ae2bc.extension;
 
-import cn.ae2bc.pattern.InputDirectionData;
+import cn.ae2bc.pattern.MaterialInputConfigData;
 
 public interface PatternEncodingLogicExtension {
-    InputDirectionData ae2bc$getInputDirections();
+    MaterialInputConfigData ae2bc$getMaterialInputConfig();
 
-    void ae2bc$setInputDirections(InputDirectionData directions);
+    void ae2bc$setMaterialInputConfig(MaterialInputConfigData config);
 }

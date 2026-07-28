@@ -47,9 +47,9 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
     private int distributionCursor;
     private long demandCacheTick = Long.MIN_VALUE;
     private int demandCacheFe;
-    private IGrid eligibleOutputsGrid;
-    private long eligibleOutputsTick = Long.MIN_VALUE;
-    private List<PatternP2PTunnelPart> eligibleOutputs = List.of();
+    private IGrid eligibleReceiversGrid;
+    private long eligibleReceiversTick = Long.MIN_VALUE;
+    private List<EnergyReceiver> eligibleReceivers = List.of();
     private BlockCapabilityCache<IEnergyStorage, Direction> sourceEnergyCache;
 
     public PatternP2PTunnelEnergyPart(IPartItem<?> partItem) {
@@ -116,7 +116,7 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
         double localDemand = super.getFunnelPowerDemand(maxRequired);
         double remainingCapacity = Math.max(0, maxRequired - localDemand);
         int remoteLimit = aeToFeFloor(remainingCapacity);
-        int remoteDemand = getRemoteDemandFe(getEligibleOutputs(), remoteLimit);
+        int remoteDemand = getRemoteDemandFe(getEligibleReceivers(), remoteLimit);
         return Math.min(maxRequired, localDemand + PowerUnit.FE.convertTo(PowerUnit.AE, remoteDemand));
     }
 
@@ -143,17 +143,17 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
     }
 
     private int distributeToOutputs(int offered, boolean simulate) {
-        List<PatternP2PTunnelPart> outputs = getEligibleOutputs();
-        int outputCount = outputs.size();
-        if (offered <= 0 || outputCount == 0) {
+        List<EnergyReceiver> receivers = getEligibleReceivers();
+        int receiverCount = receivers.size();
+        if (offered <= 0 || receiverCount == 0) {
             return 0;
         }
 
-        int startIndex = Math.floorMod(distributionCursor, outputCount);
-        int accepted = FairEnergyDistributor.distribute(offered, outputCount, startIndex,
-                (index, amount) -> outputs.get(index).receiveExternalEnergy(amount, simulate));
+        int startIndex = Math.floorMod(distributionCursor, receiverCount);
+        int accepted = FairEnergyDistributor.distribute(offered, receiverCount, startIndex,
+                (index, amount) -> receivers.get(index).receive(amount, simulate));
         if (!simulate) {
-            distributionCursor = (startIndex + 1) % outputCount;
+            distributionCursor = (startIndex + 1) % receiverCount;
         }
         return accepted;
     }
@@ -232,36 +232,40 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
         return new PullOutcome(accepted, remainingDemand, sourceHasMore);
     }
 
-    private int getRemoteDemandFe(List<PatternP2PTunnelPart> outputs, int limit) {
+    private int getRemoteDemandFe(List<EnergyReceiver> receivers, int limit) {
         int demand = 0;
-        for (var output : outputs) {
+        for (var receiver : receivers) {
             int remaining = limit - demand;
             if (remaining <= 0) {
                 break;
             }
-            demand += output.receiveExternalEnergy(remaining, true);
+            demand += receiver.receive(remaining, true);
         }
         return demand;
     }
 
-    private List<PatternP2PTunnelPart> getEligibleOutputs() {
+    private List<EnergyReceiver> getEligibleReceivers() {
         var grid = getMainNode().getGrid();
         if (grid == null) {
-            eligibleOutputsGrid = null;
-            eligibleOutputsTick = Long.MIN_VALUE;
-            eligibleOutputs = List.of();
-            return eligibleOutputs;
+            eligibleReceiversGrid = null;
+            eligibleReceiversTick = Long.MIN_VALUE;
+            eligibleReceivers = List.of();
+            return eligibleReceivers;
         }
         var level = getLevel();
         long gameTime = level == null ? Long.MIN_VALUE : level.getGameTime();
-        if (eligibleOutputsGrid != grid || eligibleOutputsTick != gameTime) {
-            eligibleOutputs = grid.getMachines(PatternP2PTunnelPart.class).stream()
-                    .filter(PatternP2PTunnelPart::isOperationalOutput)
+        if (eligibleReceiversGrid != grid || eligibleReceiversTick != gameTime) {
+            eligibleReceivers = java.util.stream.Stream.concat(
+                            grid.getMachines(PatternP2PTunnelPart.class).stream()
+                                    .filter(PatternP2PTunnelPart::isOperationalOutput)
+                                    .map(output -> (EnergyReceiver) output::receiveExternalEnergy),
+                            grid.getMachines(PatternP2PUnitPortPart.class).stream()
+                                    .map(port -> (EnergyReceiver) port::receiveExternalEnergy))
                     .toList();
-            eligibleOutputsGrid = grid;
-            eligibleOutputsTick = gameTime;
+            eligibleReceiversGrid = grid;
+            eligibleReceiversTick = gameTime;
         }
-        return eligibleOutputs;
+        return eligibleReceivers;
     }
 
     private static int aeToFeFloor(double amount) {
@@ -406,5 +410,10 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
         private boolean shouldAccelerate() {
             return accepted > 0 && remainingDemand > 0 && sourceHasMore;
         }
+    }
+
+    @FunctionalInterface
+    private interface EnergyReceiver {
+        int receive(int maxReceive, boolean simulate);
     }
 }

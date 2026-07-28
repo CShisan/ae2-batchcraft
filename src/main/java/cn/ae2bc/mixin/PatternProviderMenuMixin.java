@@ -9,7 +9,6 @@ import appeng.menu.slot.RestrictedInputSlot;
 import cn.ae2bc.extension.PatternProviderExtractionExtension;
 import cn.ae2bc.extension.PatternProviderMenuExtension;
 import cn.ae2bc.menu.ProductExtractionMenu;
-import net.minecraft.world.entity.player.Inventory;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

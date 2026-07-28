@@ -5,6 +5,8 @@ import appeng.menu.guisync.GuiSync;
 import appeng.menu.implementations.MenuTypeBuilder;
 import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.logic.ReturnMode;
+import cn.ae2bc.logic.RedstoneOutputMode;
+import cn.ae2bc.logic.PatternP2PUnitConfiguration;
 import cn.ae2bc.part.PatternP2PTunnelPart;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -12,6 +14,11 @@ import net.minecraft.world.inventory.MenuType;
 
 public final class PatternP2PTunnelInputMenu extends AEBaseMenu {
     private static final String SET_RETURN_MODE = "setReturnMode";
+    private static final String SET_BREAK_RECOVERY = "setBreakRecovery";
+    private static final String SET_REDSTONE_STRENGTH = "setRedstoneStrength";
+    private static final String SET_REDSTONE_MODE = "setRedstoneMode";
+    private static final String SET_PULSE_WIDTH = "setPulseWidth";
+    private static final String SET_PULSE_PERIOD = "setPulsePeriod";
 
     public static final MenuType<PatternP2PTunnelInputMenu> TYPE = MenuTypeBuilder
             .create(PatternP2PTunnelInputMenu::new, PatternP2PTunnelPart.class)
@@ -23,11 +30,26 @@ public final class PatternP2PTunnelInputMenu extends AEBaseMenu {
 
     @GuiSync(0)
     public ReturnMode returnMode = ReturnMode.UNBLOCKED;
+    @GuiSync(1) public boolean breakRecovery = true;
+    @GuiSync(2) public int redstoneStrength = PatternP2PUnitConfiguration.DEFAULT_REDSTONE_STRENGTH;
+    @GuiSync(3) public RedstoneOutputMode redstoneMode = RedstoneOutputMode.SINGLE_TRIGGER;
+    @GuiSync(4) public int pulseWidth = PatternP2PUnitConfiguration.DEFAULT_PULSE_WIDTH;
+    @GuiSync(5) public int pulsePeriod = PatternP2PUnitConfiguration.DEFAULT_PULSE_PERIOD;
 
     public PatternP2PTunnelInputMenu(int id, Inventory playerInventory, PatternP2PTunnelPart host) {
         super(TYPE, id, playerInventory, host);
         this.host = host;
         registerClientAction(SET_RETURN_MODE, ReturnMode.class, this::handleSetReturnMode);
+        registerClientAction(SET_BREAK_RECOVERY, Boolean.class, value -> updateConfiguration(
+                configuration().withBreakRecovery(value)));
+        registerClientAction(SET_REDSTONE_STRENGTH, Integer.class, value -> updateConfiguration(
+                configuration().withRedstone(value, redstoneMode, pulseWidth, pulsePeriod)));
+        registerClientAction(SET_REDSTONE_MODE, RedstoneOutputMode.class, value -> updateConfiguration(
+                configuration().withRedstone(redstoneStrength, value, pulseWidth, pulsePeriod)));
+        registerClientAction(SET_PULSE_WIDTH, Integer.class, value -> updateConfiguration(
+                configuration().withRedstone(redstoneStrength, redstoneMode, value, pulsePeriod)));
+        registerClientAction(SET_PULSE_PERIOD, Integer.class, value -> updateConfiguration(
+                configuration().withRedstone(redstoneStrength, redstoneMode, pulseWidth, value)));
     }
 
     @Override
@@ -35,6 +57,7 @@ public final class PatternP2PTunnelInputMenu extends AEBaseMenu {
         if (isServerSide() && !host.isOutput()) {
             var logic = host.getInputLogic();
             returnMode = logic.getReturnMode();
+            copyConfiguration(logic.getPatternP2PUnitConfiguration());
         }
         super.broadcastChanges();
     }
@@ -44,10 +67,44 @@ public final class PatternP2PTunnelInputMenu extends AEBaseMenu {
         sendClientAction(SET_RETURN_MODE, mode);
     }
 
+    public void setBreakRecovery(boolean value) { breakRecovery = value; sendClientAction(SET_BREAK_RECOVERY, value); }
+    public void setRedstoneStrength(int value) {
+        redstoneStrength = Math.clamp(value, 0, 15);
+        sendClientAction(SET_REDSTONE_STRENGTH, redstoneStrength);
+    }
+    public void setRedstoneMode(RedstoneOutputMode value) { redstoneMode = value; sendClientAction(SET_REDSTONE_MODE, value); }
+    public void setPulseWidth(int value) {
+        pulseWidth = Math.clamp(value, 1, pulsePeriod);
+        sendClientAction(SET_PULSE_WIDTH, pulseWidth);
+    }
+    public void setPulsePeriod(int value) {
+        pulsePeriod = Math.clamp(value, 1, PatternP2PUnitConfiguration.MAX_PULSE_TICKS);
+        pulseWidth = Math.min(pulseWidth, pulsePeriod);
+        sendClientAction(SET_PULSE_PERIOD, pulsePeriod);
+    }
+
     private void handleSetReturnMode(ReturnMode mode) {
         if (isServerSide() && !host.isOutput() && mode != null) {
             host.getInputLogic().setReturnMode(mode);
         }
+    }
+
+    private PatternP2PUnitConfiguration configuration() {
+        return new PatternP2PUnitConfiguration(returnMode, breakRecovery, redstoneStrength,
+                redstoneMode, pulseWidth, pulsePeriod);
+    }
+
+    private void updateConfiguration(PatternP2PUnitConfiguration value) {
+        if (isServerSide() && !host.isOutput()) host.getInputLogic().setPatternP2PUnitConfiguration(value);
+    }
+
+    private void copyConfiguration(PatternP2PUnitConfiguration value) {
+        returnMode = value.returnMode();
+        breakRecovery = value.breakRecovery();
+        redstoneStrength = value.redstoneStrength();
+        redstoneMode = value.redstoneMode();
+        pulseWidth = value.pulseWidthTicks();
+        pulsePeriod = value.pulsePeriodTicks();
     }
 
 }

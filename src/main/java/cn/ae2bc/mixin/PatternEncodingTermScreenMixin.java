@@ -84,7 +84,10 @@ public abstract class PatternEncodingTermScreenMixin {
         PatternEncodingTermScreen<?> screen = (PatternEncodingTermScreen<?>) (Object) this;
         int inputSlot = ae2bc$findInputSlot(screen.getMenu(), slot);
         if (inputSlot < 0 || ((PatternEncodingTermMenuExtension) screen.getMenu())
-                .ae2bc$getInputDirections().getDirection(inputSlot) == null) {
+                .ae2bc$getMaterialInputConfig().getDirection(inputSlot) == null
+                && ((PatternEncodingTermMenuExtension) screen.getMenu())
+                .ae2bc$getMaterialInputConfig().getOutputForm(inputSlot)
+                == cn.ae2bc.pattern.MaterialOutputForm.NORMAL) {
             return;
         }
         graphics.pose().pushPose();

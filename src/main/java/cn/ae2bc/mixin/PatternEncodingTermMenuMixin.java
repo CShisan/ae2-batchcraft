@@ -4,7 +4,10 @@ import appeng.menu.guisync.GuiSync;
 import appeng.menu.me.items.PatternEncodingTermMenu;
 import appeng.parts.encoding.EncodingMode;
 import appeng.parts.encoding.PatternEncodingLogic;
+import appeng.api.stacks.GenericStack;
 import cn.ae2bc.pattern.InputDirectionData;
+import cn.ae2bc.pattern.MaterialInputConfigData;
+import cn.ae2bc.pattern.MaterialOutputForm;
 import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.extension.PatternEncodingLogicExtension;
 import cn.ae2bc.extension.PatternEncodingTermMenuExtension;
@@ -23,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(PatternEncodingTermMenu.class)
 public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTermMenuExtension {
     @Unique
-    private static final String AE2BC_SET_INPUT_DIRECTION = "ae2bcSetInputDirection";
+    private static final String AE2BC_SET_MATERIAL_INPUT_CONFIG = "ae2bcSetMaterialInputConfig";
 
     @Shadow
     @Final
@@ -42,7 +45,16 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
     @GuiSync(83)
     private long ae2bc$inputDirections3;
     @Unique
-    private InputDirectionData ae2bc$cachedInputDirections = InputDirectionData.EMPTY;
+    @GuiSync(84)
+    private long ae2bc$outputForms0;
+    @Unique
+    @GuiSync(85)
+    private long ae2bc$outputForms1;
+    @Unique
+    @GuiSync(86)
+    private long ae2bc$outputForms2;
+    @Unique
+    private MaterialInputConfigData ae2bc$cachedMaterialInputConfig = MaterialInputConfigData.EMPTY;
     @Unique
     private long ae2bc$cachedInputDirections0;
     @Unique
@@ -51,20 +63,26 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
     private long ae2bc$cachedInputDirections2;
     @Unique
     private long ae2bc$cachedInputDirections3;
+    @Unique
+    private long ae2bc$cachedOutputForms0;
+    @Unique
+    private long ae2bc$cachedOutputForms1;
+    @Unique
+    private long ae2bc$cachedOutputForms2;
 
     @Inject(
             method = "<init>(Lnet/minecraft/world/inventory/MenuType;ILnet/minecraft/world/entity/player/Inventory;Lappeng/helpers/IPatternTerminalMenuHost;Z)V",
             at = @At("RETURN"))
     private void ae2bc$registerDirectionAction(CallbackInfo ci) {
         ((AEBaseMenuInvoker) this).ae2bc$registerClientAction(
-                AE2BC_SET_INPUT_DIRECTION, int[].class, this::ae2bc$handleSetInputDirection);
+                AE2BC_SET_MATERIAL_INPUT_CONFIG, int[].class, this::ae2bc$handleSetMaterialInputConfig);
     }
 
     @Inject(method = "broadcastChanges", at = @At("TAIL"))
     private void ae2bc$syncDirections(CallbackInfo ci) {
         PatternEncodingTermMenu menu = (PatternEncodingTermMenu) (Object) this;
         if (!menu.isClientSide()) {
-            ae2bc$setSyncedDirections(((PatternEncodingLogicExtension) encodingLogic).ae2bc$getInputDirections());
+            ae2bc$setSyncedConfig(((PatternEncodingLogicExtension) encodingLogic).ae2bc$getMaterialInputConfig());
         }
     }
 
@@ -74,27 +92,34 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
         if (pattern == null || pattern.isEmpty()) {
             return;
         }
-        InputDirectionData directions = ((PatternEncodingLogicExtension) encodingLogic).ae2bc$getInputDirections();
-        if (directions.isEmpty()) {
+        MaterialInputConfigData config =
+                ((PatternEncodingLogicExtension) encodingLogic).ae2bc$getMaterialInputConfig();
+        if (config.isEmpty()) {
+            pattern.remove(ModContent.MATERIAL_INPUT_CONFIG.get());
             pattern.remove(ModContent.INPUT_DIRECTIONS.get());
         } else {
-            pattern.set(ModContent.INPUT_DIRECTIONS.get(), directions);
+            pattern.set(ModContent.MATERIAL_INPUT_CONFIG.get(), config);
+            pattern.remove(ModContent.INPUT_DIRECTIONS.get());
         }
     }
 
     @Override
-    public InputDirectionData ae2bc$getInputDirections() {
+    public MaterialInputConfigData ae2bc$getMaterialInputConfig() {
         if (ae2bc$cachedInputDirections0 != ae2bc$inputDirections0
                 || ae2bc$cachedInputDirections1 != ae2bc$inputDirections1
                 || ae2bc$cachedInputDirections2 != ae2bc$inputDirections2
-                || ae2bc$cachedInputDirections3 != ae2bc$inputDirections3) {
-            ae2bc$cachedInputDirections = InputDirectionData.fromPacked(new long[]{
+                || ae2bc$cachedInputDirections3 != ae2bc$inputDirections3
+                || ae2bc$cachedOutputForms0 != ae2bc$outputForms0
+                || ae2bc$cachedOutputForms1 != ae2bc$outputForms1
+                || ae2bc$cachedOutputForms2 != ae2bc$outputForms2) {
+            ae2bc$cachedMaterialInputConfig = MaterialInputConfigData.fromPacked(new long[]{
                     ae2bc$inputDirections0, ae2bc$inputDirections1,
-                    ae2bc$inputDirections2, ae2bc$inputDirections3
+                    ae2bc$inputDirections2, ae2bc$inputDirections3,
+                    ae2bc$outputForms0, ae2bc$outputForms1, ae2bc$outputForms2
             });
             ae2bc$cacheSyncedWords();
         }
-        return ae2bc$cachedInputDirections;
+        return ae2bc$cachedMaterialInputConfig;
     }
 
     @Override
@@ -103,36 +128,69 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
         if (!InputDirectionData.isValidSlot(slot) || menu.getMode() != EncodingMode.PROCESSING) {
             return;
         }
-        InputDirectionData updated = ae2bc$getInputDirections().withDirection(slot, direction);
-        ae2bc$setSyncedDirections(updated);
+        MaterialInputConfigData updated = ae2bc$getMaterialInputConfig().withDirection(slot, direction);
+        ae2bc$setSyncedConfig(updated);
         ((AEBaseMenuInvoker) this).ae2bc$sendClientAction(
-                AE2BC_SET_INPUT_DIRECTION, new int[]{slot, direction == null ? 0 : direction.ordinal() + 1});
+                AE2BC_SET_MATERIAL_INPUT_CONFIG,
+                new int[]{slot, direction == null ? 0 : direction.ordinal() + 1,
+                        updated.getOutputForm(slot).getId()});
+    }
+
+    @Override
+    public void ae2bc$setMaterialOutputForm(int slot, MaterialOutputForm form) {
+        PatternEncodingTermMenu menu = (PatternEncodingTermMenu) (Object) this;
+        if (!InputDirectionData.isValidSlot(slot) || menu.getMode() != EncodingMode.PROCESSING || form == null) {
+            return;
+        }
+        Slot[] inputSlots = menu.getProcessingInputSlots();
+        GenericStack input = slot < inputSlots.length
+                ? GenericStack.fromItemStack(inputSlots[slot].getItem()) : null;
+        if (input == null || !form.supports(input.what())) {
+            return;
+        }
+        MaterialInputConfigData updated = ae2bc$getMaterialInputConfig().withOutputForm(slot, form);
+        ae2bc$setSyncedConfig(updated);
+        Direction direction = updated.getDirection(slot);
+        ((AEBaseMenuInvoker) this).ae2bc$sendClientAction(
+                AE2BC_SET_MATERIAL_INPUT_CONFIG,
+                new int[]{slot, direction == null ? 0 : direction.ordinal() + 1, form.getId()});
     }
 
     @Unique
-    private void ae2bc$handleSetInputDirection(int[] action) {
+    private void ae2bc$handleSetMaterialInputConfig(int[] action) {
         PatternEncodingTermMenu menu = (PatternEncodingTermMenu) (Object) this;
         Slot[] inputSlots = menu.getProcessingInputSlots();
-        if (menu.isClientSide() || action == null || action.length != 2
+        if (menu.isClientSide() || action == null || action.length != 3
                 || menu.getMode() != EncodingMode.PROCESSING
                 || !InputDirectionData.isValidSlot(action[0])
                 || action[0] >= inputSlots.length
                 || !inputSlots[action[0]].hasItem()) {
             return;
         }
-        InputDirectionData current = ((PatternEncodingLogicExtension) encodingLogic).ae2bc$getInputDirections();
-        ((PatternEncodingLogicExtension) encodingLogic).ae2bc$setInputDirections(
-                current.withCode(action[0], action[1]));
+        MaterialOutputForm form = MaterialOutputForm.fromId(action[2]);
+        GenericStack input = GenericStack.fromItemStack(inputSlots[action[0]].getItem());
+        if (input == null || !form.supports(input.what())) {
+            return;
+        }
+        MaterialInputConfigData current =
+                ((PatternEncodingLogicExtension) encodingLogic).ae2bc$getMaterialInputConfig();
+        Direction direction = action[1] >= 1 && action[1] <= Direction.values().length
+                ? Direction.values()[action[1] - 1] : null;
+        ((PatternEncodingLogicExtension) encodingLogic).ae2bc$setMaterialInputConfig(
+                current.withDirection(action[0], direction).withOutputForm(action[0], form));
     }
 
     @Unique
-    private void ae2bc$setSyncedDirections(InputDirectionData directions) {
-        long[] words = directions.toPacked();
+    private void ae2bc$setSyncedConfig(MaterialInputConfigData config) {
+        long[] words = config.toPacked();
         ae2bc$inputDirections0 = words[0];
         ae2bc$inputDirections1 = words[1];
         ae2bc$inputDirections2 = words[2];
         ae2bc$inputDirections3 = words[3];
-        ae2bc$cachedInputDirections = directions;
+        ae2bc$outputForms0 = words[4];
+        ae2bc$outputForms1 = words[5];
+        ae2bc$outputForms2 = words[6];
+        ae2bc$cachedMaterialInputConfig = config;
         ae2bc$cacheSyncedWords();
     }
 
@@ -142,5 +200,8 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
         ae2bc$cachedInputDirections1 = ae2bc$inputDirections1;
         ae2bc$cachedInputDirections2 = ae2bc$inputDirections2;
         ae2bc$cachedInputDirections3 = ae2bc$inputDirections3;
+        ae2bc$cachedOutputForms0 = ae2bc$outputForms0;
+        ae2bc$cachedOutputForms1 = ae2bc$outputForms1;
+        ae2bc$cachedOutputForms2 = ae2bc$outputForms2;
     }
 }

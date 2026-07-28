@@ -4,14 +4,21 @@ import appeng.core.AEConfig;
 import appeng.api.config.Actionable;
 import appeng.api.upgrades.Upgrades;
 import appeng.items.parts.PartItem;
+import appeng.items.parts.ColoredPartItem;
+import appeng.api.util.AEColor;
 import cn.ae2bc.item.WirelessComponentPlacerItem;
 import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.part.PatternP2PTunnelPart;
 import cn.ae2bc.part.PatternP2PTunnelEnergyPart;
+import cn.ae2bc.part.PatternP2PUnitPortPart;
+import cn.ae2bc.part.PatternP2PUnitManagerPart;
+import cn.ae2bc.logic.PatternP2PUnitPortType;
 import cn.ae2bc.pattern.InputDirectionData;
+import cn.ae2bc.pattern.MaterialInputConfigData;
 import cn.ae2bc.placer.P2PPlacerSelection;
 import cn.ae2bc.placer.P2PPlacerSettings;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -24,6 +31,10 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
+import java.util.EnumMap;
+import java.util.Collections;
+import java.util.Map;
+import java.util.UUID;
 
 public final class ModContent {
     public static final String COMPONENT_PLACER_ID = "component_placer";
@@ -38,6 +49,16 @@ public final class ModContent {
             COMPONENTS.register("input_directions", () -> DataComponentType.<InputDirectionData>builder()
                     .persistent(InputDirectionData.CODEC)
                     .networkSynchronized(InputDirectionData.STREAM_CODEC)
+                    .build());
+    public static final Supplier<DataComponentType<MaterialInputConfigData>> MATERIAL_INPUT_CONFIG =
+            COMPONENTS.register("material_input_config", () -> DataComponentType.<MaterialInputConfigData>builder()
+                    .persistent(MaterialInputConfigData.CODEC)
+                    .networkSynchronized(MaterialInputConfigData.STREAM_CODEC)
+                    .build());
+    public static final Supplier<DataComponentType<UUID>> PATTERN_P2P_UNIT_ID =
+            COMPONENTS.register("pp2p_unit_id", () -> DataComponentType.<UUID>builder()
+                    .persistent(UUIDUtil.CODEC)
+                    .networkSynchronized(UUIDUtil.STREAM_CODEC)
                     .build());
 
     public static final Supplier<DataComponentType<P2PPlacerSettings>> PLACER_SETTINGS =
@@ -75,6 +96,26 @@ public final class ModContent {
     public static final DeferredHolder<Item, PartItem<PatternP2PTunnelEnergyPart>> PATTERN_P2P_TUNNEL_ENERGY =
             ITEMS.register("pattern_p2p_tunnel_energy", () -> new PartItem<>(new Item.Properties(),
                     PatternP2PTunnelEnergyPart.class, PatternP2PTunnelEnergyPart::new));
+    public static final Map<AEColor, DeferredHolder<Item, ColoredPartItem<PatternP2PUnitManagerPart>>> PATTERN_P2P_UNIT_MANAGERS =
+            registerPatternP2PUnitManagers();
+    public static final DeferredHolder<Item, ColoredPartItem<PatternP2PUnitManagerPart>> PATTERN_P2P_UNIT_MANAGER =
+            PATTERN_P2P_UNIT_MANAGERS.get(AEColor.TRANSPARENT);
+    public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_DROP =
+            patternP2PUnitPort("pp2p_unit_port_drop", PatternP2PUnitPortType.DROP);
+    public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_PICKUP =
+            patternP2PUnitPort("pp2p_unit_port_pickup", PatternP2PUnitPortType.PICKUP);
+    public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_PLACE =
+            patternP2PUnitPort("pp2p_unit_port_place", PatternP2PUnitPortType.PLACE);
+    public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_BREAK =
+            patternP2PUnitPort("pp2p_unit_port_break", PatternP2PUnitPortType.BREAK);
+    public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_TRANSFER =
+            patternP2PUnitPort("pp2p_unit_port_transfer", PatternP2PUnitPortType.TRANSFER);
+    public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_RETURN =
+            patternP2PUnitPort("pp2p_unit_port_return", PatternP2PUnitPortType.RETURN);
+    public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_REDSTONE =
+            patternP2PUnitPort("pp2p_unit_port_redstone", PatternP2PUnitPortType.REDSTONE);
+    public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_ENERGY =
+            patternP2PUnitPort("pp2p_unit_port_energy", PatternP2PUnitPortType.ENERGY);
     public static final DeferredHolder<Item, Item> PRODUCT_EXTRACTION_CARD =
             ITEMS.register("product_extraction_card", () -> Upgrades.createUpgradeCardItem(new Item.Properties()));
     public static final DeferredHolder<Item, WirelessComponentPlacerItem> COMPONENT_PLACER =
@@ -88,6 +129,17 @@ public final class ModContent {
                 output.accept(PATTERN_P2P_TUNNEL_INPUT.get());
                 output.accept(PATTERN_P2P_TUNNEL_OUTPUT.get());
                 output.accept(PATTERN_P2P_TUNNEL_ENERGY.get());
+                for (var manager : PATTERN_P2P_UNIT_MANAGERS.values()) {
+                    output.accept(manager.get());
+                }
+                output.accept(PATTERN_P2P_UNIT_PORT_DROP.get());
+                output.accept(PATTERN_P2P_UNIT_PORT_PICKUP.get());
+                output.accept(PATTERN_P2P_UNIT_PORT_PLACE.get());
+                output.accept(PATTERN_P2P_UNIT_PORT_BREAK.get());
+                output.accept(PATTERN_P2P_UNIT_PORT_TRANSFER.get());
+                output.accept(PATTERN_P2P_UNIT_PORT_RETURN.get());
+                output.accept(PATTERN_P2P_UNIT_PORT_REDSTONE.get());
+                output.accept(PATTERN_P2P_UNIT_PORT_ENERGY.get());
                 output.accept(PRODUCT_EXTRACTION_CARD.get());
                 var placer = COMPONENT_PLACER.get();
                 ItemStack chargedPlacer = placer.getDefaultInstance();
@@ -97,6 +149,32 @@ public final class ModContent {
             .build());
 
     private ModContent() {
+    }
+
+    private static DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> patternP2PUnitPort(
+            String id, PatternP2PUnitPortType type) {
+        return ITEMS.register(id, () -> new PartItem<>(new Item.Properties(),
+                PatternP2PUnitPortPart.class, item -> new PatternP2PUnitPortPart(item, type)));
+    }
+
+    private static Map<AEColor, DeferredHolder<Item, ColoredPartItem<PatternP2PUnitManagerPart>>> registerPatternP2PUnitManagers() {
+        Map<AEColor, DeferredHolder<Item, ColoredPartItem<PatternP2PUnitManagerPart>>> result =
+                new EnumMap<>(AEColor.class);
+        for (AEColor color : AEColor.values()) {
+            String id = color == AEColor.TRANSPARENT
+                    ? "pp2p_unit_manager" : color.registryPrefix + "_pp2p_unit_manager";
+            result.put(color, ITEMS.register(id, () -> new ColoredPartItem<>(new Item.Properties(),
+                    PatternP2PUnitManagerPart.class, PatternP2PUnitManagerPart::new, color)));
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    public static ColoredPartItem<PatternP2PUnitManagerPart> getPatternP2PUnitManager(AEColor color) {
+        return PATTERN_P2P_UNIT_MANAGERS.get(color).get();
+    }
+
+    public static boolean isPatternP2PUnitManagerItem(Item item) {
+        return PATTERN_P2P_UNIT_MANAGERS.values().stream().anyMatch(holder -> holder.get() == item);
     }
 
     public static void register(IEventBus bus) {

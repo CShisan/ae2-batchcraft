@@ -1,0 +1,25 @@
+{
+  "$schema": "../schema.json",
+  "includes": ["../common/common.json"],
+  "generatedBackground": {"width": 176, "height": 125},
+  "text": {
+    "dialog_title": {"text": {"translate": "item.ae2_batchcraft.pp2p_unit_manager"}, "position": {"left": 8, "top": 6}},
+    "page_title": {"text": {"translate": "gui.ae2_batchcraft.pp2p_unit.page.common"}, "scale": 1.2, "position": {"left": 8, "top": 23}},
+    "return_mode": {"text": {"translate": "gui.ae2_batchcraft.return_mode"}, "position": {"left": 8, "top": 59}},
+    "break_recovery": {"text": {"translate": "gui.ae2_batchcraft.pp2p_unit.break_recovery"}, "position": {"left": 8, "top": 44}},
+    "redstone_mode_label": {"text": {"translate": "gui.ae2_batchcraft.pp2p_unit.redstone_mode"}, "position": {"left": 8, "top": 43}},
+    "strength": {"text": {"translate": "gui.ae2_batchcraft.pp2p_unit.redstone_strength"}, "position": {"left": 8, "top": 63}},
+    "pulse_width": {"text": {"translate": "gui.ae2_batchcraft.pp2p_unit.pulse_width"}, "position": {"left": 8, "top": 84}},
+    "pulse_width_unit": {"text": {"text": "tick"}, "position": {"left": 151, "top": 84}},
+    "pulse_period": {"text": {"translate": "gui.ae2_batchcraft.pp2p_unit.pulse_period"}, "position": {"left": 8, "top": 105}},
+    "pulse_period_unit": {"text": {"text": "tick"}, "position": {"left": 151, "top": 105}}
+  },
+  "widgets": {
+    "close": {"left": 152, "top": -5, "width": 20, "height": 20},
+    "syncMain": {"left": 8, "top": 39, "width": 160, "height": 14},
+    "returnStrict": {"left": 8, "top": 70, "width": 77, "height": 18},
+    "returnUnblocked": {"left": 91, "top": 70, "width": 77, "height": 18},
+    "breakRecovery": {"left": 148, "top": 41, "width": 20, "height": 14},
+    "redstoneMode": {"left": 96, "top": 38, "width": 72, "height": 18}
+  }
+}

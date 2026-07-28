@@ -6,26 +6,27 @@ import appeng.api.stacks.GenericStack;
 import appeng.crafting.pattern.AEProcessingPattern;
 import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.pattern.InputDirectionData;
+import cn.ae2bc.pattern.MaterialInputConfigData;
 import cn.ae2bc.registry.ModContent;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-final class PatternDispatchMetadata {
+public final class PatternDispatchMetadata {
     private static final PatternDispatchMetadata INVALID = new PatternDispatchMetadata(
-            Map.of(), null, InputDirectionData.EMPTY, false);
+            Map.of(), null, MaterialInputConfigData.EMPTY, false);
 
     private final Map<AEKey, Long> declaredOutputs;
     private final GenericStack primaryOutput;
-    private final InputDirectionData inputDirections;
+    private final MaterialInputConfigData materialInputConfig;
     private final boolean explicitDirections;
 
     private PatternDispatchMetadata(Map<AEKey, Long> declaredOutputs, GenericStack primaryOutput,
-                                    InputDirectionData inputDirections, boolean explicitDirections) {
+                                    MaterialInputConfigData materialInputConfig, boolean explicitDirections) {
         this.declaredOutputs = declaredOutputs;
         this.primaryOutput = primaryOutput;
-        this.inputDirections = inputDirections;
+        this.materialInputConfig = materialInputConfig;
         this.explicitDirections = explicitDirections;
     }
 
@@ -44,22 +45,26 @@ final class PatternDispatchMetadata {
                 return INVALID;
             }
 
-            InputDirectionData directions = getInputDirections(pattern);
+            MaterialInputConfigData config = getMaterialInputConfig(pattern);
             return new PatternDispatchMetadata(
-                    Collections.unmodifiableMap(outputs), primary, directions,
-                    hasExplicitDirections(pattern, directions));
+                    Collections.unmodifiableMap(outputs), primary, config,
+                    hasExplicitDirections(pattern, config.directions()));
         } catch (ArithmeticException exception) {
             Ae2bcMod.LOGGER.warn("Pattern output amounts overflow while preparing dispatch metadata", exception);
             return INVALID;
         }
     }
 
-    private static InputDirectionData getInputDirections(IPatternDetails pattern) {
+    private static MaterialInputConfigData getMaterialInputConfig(IPatternDetails pattern) {
         if (!(pattern instanceof AEProcessingPattern processingPattern)) {
-            return InputDirectionData.EMPTY;
+            return MaterialInputConfigData.EMPTY;
+        }
+        MaterialInputConfigData config = processingPattern.getDefinition().get(ModContent.MATERIAL_INPUT_CONFIG.get());
+        if (config != null) {
+            return config;
         }
         InputDirectionData directions = processingPattern.getDefinition().get(ModContent.INPUT_DIRECTIONS.get());
-        return directions == null ? InputDirectionData.EMPTY : directions;
+        return MaterialInputConfigData.fromLegacy(directions);
     }
 
     private static boolean hasExplicitDirections(IPatternDetails pattern, InputDirectionData directions) {
@@ -75,26 +80,30 @@ final class PatternDispatchMetadata {
         return false;
     }
 
-    boolean isValid() {
+    public boolean isValid() {
         return primaryOutput != null;
     }
 
-    Map<AEKey, Long> declaredOutputs() {
+    public Map<AEKey, Long> declaredOutputs() {
         return declaredOutputs;
     }
 
-    GenericStack primaryOutput() {
+    public GenericStack primaryOutput() {
         if (primaryOutput == null) {
             throw new IllegalStateException("Invalid pattern metadata has no primary output");
         }
         return primaryOutput;
     }
 
-    InputDirectionData inputDirections() {
-        return inputDirections;
+    public InputDirectionData inputDirections() {
+        return materialInputConfig.directions();
     }
 
-    boolean hasExplicitDirections() {
+    public MaterialInputConfigData materialInputConfig() {
+        return materialInputConfig;
+    }
+
+    public boolean hasExplicitDirections() {
         return explicitDirections;
     }
 }

@@ -36,7 +36,7 @@ public final class PatternP2PTunnelOutputMenu extends AEBaseMenu {
 
     @Override
     public void broadcastChanges() {
-        if (isServerSide() && host.isOutput()) {
+        if (isServerSide() && host.isStandardOutput()) {
             var logic = host.getOutputLogic();
             returnMode = logic.getReturnMode();
             syncInputSettings = logic.isSyncInputSettings();
@@ -55,14 +55,16 @@ public final class PatternP2PTunnelOutputMenu extends AEBaseMenu {
     }
 
     private void handleSetReturnMode(ReturnMode mode) {
-        if (isServerSide() && host.isOutput() && mode != null && !host.getOutputLogic().isSyncInputSettings()) {
+        if (isServerSide() && host.isStandardOutput()
+                && mode != null && !host.getOutputLogic().isSyncInputSettings()) {
             host.getOutputLogic().setReturnMode(mode);
         }
     }
 
     private void handleSetSyncInputSettings(Boolean enabled) {
-        if (isServerSide() && host.isOutput() && enabled != null) {
+        if (isServerSide() && host.isStandardOutput() && enabled != null) {
             host.getOutputLogic().setSyncInputSettings(enabled);
         }
     }
+
 }

@@ -54,13 +54,17 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPart>
-        implements ICraftingMachine {
+        implements ICraftingMachine, PatternTaskEndpoint {
     private static final P2PModels INPUT_MODELS = new P2PModels(
             ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/p2p/pattern_p2p_tunnel_input"));
     private static final P2PModels OUTPUT_MODELS = new P2PModels(
             ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/p2p/pattern_p2p_tunnel_output"));
+    public enum EndpointKind {
+        INPUT,
+        OUTPUT
+    }
 
-    private final boolean output;
+    private final EndpointKind endpointKind;
     private final PatternP2PTunnelInputLogic inputLogic;
     private final PatternP2PTunnelOutputLogic outputLogic;
     private final RemoteReturnInventory returnInventory;
@@ -70,15 +74,22 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
     private BlockCapabilityCache<GenericInternalInventory, Direction> returnTargetCache;
 
     public PatternP2PTunnelPart(IPartItem<?> partItem, boolean output) {
+        this(partItem, output ? EndpointKind.OUTPUT : EndpointKind.INPUT);
+    }
+
+    private PatternP2PTunnelPart(IPartItem<?> partItem, EndpointKind endpointKind) {
         super(partItem);
-        this.output = output;
-        if (output) {
+        this.endpointKind = endpointKind;
+        if (endpointKind != EndpointKind.INPUT) {
             getMainNode().setFlags();
         }
-        this.inputLogic = output ? null : new PatternP2PTunnelInputLogic(getMainNode(), this);
-        this.outputLogic = output ? new PatternP2PTunnelOutputLogic(getMainNode(), this) : null;
+        this.inputLogic = endpointKind == EndpointKind.INPUT
+                ? new PatternP2PTunnelInputLogic(getMainNode(), this) : null;
+        this.outputLogic = endpointKind == EndpointKind.OUTPUT
+                ? new PatternP2PTunnelOutputLogic(getMainNode(), this) : null;
         this.returnInventory = new RemoteReturnInventory(this::findInputReturnInventory,
-                (what, amount) -> outputLogic == null ? 0 : outputLogic.filterReturnAmount(what, amount),
+                (what, amount) -> outputLogic != null ? outputLogic.filterReturnAmount(what, amount)
+                        : 0,
                 stack -> {
                     if (outputLogic != null) {
                         outputLogic.onReturnedStack(stack);
@@ -99,11 +110,19 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
 
     @Override
     public boolean isOutput() {
-        return output;
+        return endpointKind == EndpointKind.OUTPUT;
+    }
+
+    public boolean isStandardOutput() {
+        return isOutput();
     }
 
     public boolean isOperationalOutput() {
-        return output && hasConfiguredFrequency() && getMainNode().isActive();
+        return isStandardOutput() && hasConfiguredFrequency() && getMainNode().isActive();
+    }
+
+    public boolean isOperationalTaskEndpoint() {
+        return isOutput() && hasConfiguredFrequency() && getMainNode().isActive();
     }
 
     public boolean hasConfiguredFrequency() {
@@ -124,12 +143,23 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
         return outputLogic;
     }
 
+    @Override
+    public boolean canAcceptTask() {
+        return outputLogic != null && outputLogic.canAcceptTask();
+    }
+
+    @Override
+    public boolean tryAcceptPattern(IPatternDetails pattern, cn.ae2bc.logic.PatternDispatchMetadata metadata,
+                                    KeyCounter[] inputs, appeng.api.networking.security.IActionSource source) {
+        return outputLogic != null && outputLogic.tryAcceptPattern(pattern, metadata, inputs, source);
+    }
+
     public RemoteReturnInventory getReturnInventory() {
         return returnInventory;
     }
 
     public @Nullable ProductExtractionSettings getProductExtractionSettingsFromInput() {
-        if (!output) {
+        if (!isStandardOutput()) {
             return null;
         }
         var input = getInput();
@@ -313,7 +343,7 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
     }
 
     private void openConfigurationMenu(Player player) {
-        if (output) {
+        if (isStandardOutput()) {
             MenuOpener.open(PatternP2PTunnelOutputMenu.TYPE, player, MenuLocators.forPart(this));
         } else {
             MenuOpener.open(PatternP2PTunnelInputMenu.TYPE, player, MenuLocators.forPart(this));
@@ -337,7 +367,7 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
             synchronizeFromInput();
             outputLogic.alertRetry();
             notifyInputTopologyChanged();
-        } else {
+        } else if (inputLogic != null) {
             inputLogic.invalidateOutputs();
             inputLogic.synchronizeSettings();
         }
@@ -359,13 +389,12 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
     }
 
     public void synchronizeFromInput() {
-        if (outputLogic == null || !outputLogic.isSyncInputSettings()) {
-            return;
-        }
         var input = getInput();
         if (input != null && !input.isOutput() && input.hasConfiguredFrequency()) {
             var settings = input.getInputLogic();
-            outputLogic.applyInputSettings(settings.getReturnMode());
+            if (outputLogic != null && outputLogic.isSyncInputSettings()) {
+                outputLogic.applyInputSettings(settings.getReturnMode());
+            }
         }
     }
 
@@ -391,9 +420,9 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
         }
 
         boolean alternateUse = InteractionUtil.isInAlternateUseMode(player);
-        if (!output && alternateUse) {
+        if (!isOutput() && alternateUse) {
             saveFrequencyToCard(heldItem, memoryCard, player);
-        } else if (output && !alternateUse) {
+        } else if (isOutput() && !alternateUse) {
             loadFrequencyFromCard(heldItem, memoryCard, player);
         } else {
             memoryCard.notifyUser(player, MemoryCardMessages.INVALID_MACHINE);
@@ -428,7 +457,8 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
     private void loadFrequencyFromCard(ItemStack card, IMemoryCard memoryCard, Player player) {
         var storedType = card.get(AEComponents.EXPORTED_P2P_TYPE);
         var storedFrequency = card.get(AEComponents.EXPORTED_P2P_FREQUENCY);
-        if (storedType != ModContent.PATTERN_P2P_TUNNEL_INPUT.get() || storedFrequency == null) {
+        if ((storedType != ModContent.PATTERN_P2P_TUNNEL_INPUT.get()
+                && !ModContent.isPatternP2PUnitManagerItem(storedType)) || storedFrequency == null) {
             memoryCard.notifyUser(player, MemoryCardMessages.INVALID_MACHINE);
             return;
         }
@@ -437,7 +467,7 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
     }
 
     private GenericInternalInventory findInputReturnInventory() {
-        if (!isOperationalOutput()) {
+        if (!isOperationalTaskEndpoint()) {
             return null;
         }
 
@@ -466,6 +496,9 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
 
     @Override
     public IPartModel getStaticModels() {
-        return (output ? OUTPUT_MODELS : INPUT_MODELS).getModel(isPowered(), isActive());
+        return endpointKind == EndpointKind.INPUT
+                ? INPUT_MODELS.getModel(isPowered(), isActive())
+                : OUTPUT_MODELS.getModel(isPowered(), isActive());
     }
+
 }

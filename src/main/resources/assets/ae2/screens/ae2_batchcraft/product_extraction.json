@@ -11,7 +11,7 @@
   "slots": {
     "AE2_BATCHCRAFT_PRODUCT_MARKER": {
       "left": 8,
-      "top": 82,
+      "top": 84,
       "grid": "BREAK_AFTER_9COLS"
     },
     "PLAYER_INVENTORY": {
@@ -32,37 +32,37 @@
     },
     "interval": {
       "text": { "translate": "gui.ae2_batchcraft.product_extraction.interval" },
-      "position": { "left": 8, "top": 22 }
+      "position": { "left": 8, "top": 24 }
     },
     "interval_unit": {
       "text": { "translate": "gui.ae2_batchcraft.product_extraction.tick" },
-      "position": { "left": 102, "top": 22 }
+      "position": { "left": 102, "top": 24 }
     },
     "amount": {
       "text": { "translate": "gui.ae2_batchcraft.product_extraction.amount" },
-      "position": { "left": 8, "top": 43 }
+      "position": { "left": 8, "top": 45 }
     },
     "amount_unit": {
       "text": { "translate": "gui.ae2_batchcraft.product_extraction.item" },
-      "position": { "left": 102, "top": 43 }
+      "position": { "left": 102, "top": 45 }
     },
     "marker": {
       "text": { "translate": "gui.ae2_batchcraft.product_extraction.markers" },
-      "position": { "left": 8, "top": 67 }
+      "position": { "left": 8, "top": 69 }
     },
     "blacklist": {
       "text": { "translate": "gui.ae2_batchcraft.product_extraction.blacklist" },
-      "position": { "left": 80, "top": 67 }
+      "position": { "left": 80, "top": 69 }
     },
     "whitelist": {
       "text": { "translate": "gui.ae2_batchcraft.product_extraction.whitelist" },
-      "position": { "left": 140, "top": 67 }
+      "position": { "left": 140, "top": 69 }
     }
   },
   "widgets": {
     "back": { "left": 152, "top": -5, "width": 20, "height": 20 },
-    "intervalReset": { "left": 136, "top": 19, "width": 32, "height": 16 },
-    "amountReset": { "left": 136, "top": 40, "width": 32, "height": 16 },
-    "modeToggle": { "left": 111, "top": 64, "width": 22, "height": 12 }
+    "intervalReset": { "left": 136, "top": 21, "width": 32, "height": 16 },
+    "amountReset": { "left": 136, "top": 42, "width": 32, "height": 16 },
+    "modeToggle": { "left": 111, "top": 66, "width": 22, "height": 12 }
   }
 }

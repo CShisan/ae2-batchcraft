@@ -1,50 +1,14 @@
 {
   "$schema": "../schema.json",
-  "includes": [
-    "../common/common.json"
-  ],
-  "generatedBackground": {
-    "width": 176,
-    "height": 69
-  },
+  "includes": ["../common/common.json"],
+  "generatedBackground": {"width": 176, "height": 69},
   "text": {
-    "dialog_title": {
-      "text": {
-        "translate": "item.ae2_batchcraft.pattern_p2p_tunnel_output"
-      },
-      "position": {
-        "left": 8,
-        "top": 6
-      }
-    },
-    "return_mode": {
-      "text": {
-        "translate": "gui.ae2_batchcraft.return_mode"
-      },
-      "position": {
-        "left": 8,
-        "top": 34
-      }
-    }
+    "dialog_title": {"text": {"translate": "item.ae2_batchcraft.pattern_p2p_tunnel_output"}, "position": {"left": 8, "top": 6}},
+    "return_mode": {"text": {"translate": "gui.ae2_batchcraft.return_mode"}, "position": {"left": 8, "top": 34}}
   },
   "widgets": {
-    "returnStrict": {
-      "left": 8,
-      "top": 45,
-      "width": 77,
-      "height": 18
-    },
-    "returnUnblocked": {
-      "left": 91,
-      "top": 45,
-      "width": 77,
-      "height": 18
-    },
-    "syncInputSettings": {
-      "left": 8,
-      "top": 18,
-      "width": 160,
-      "height": 14
-    }
+    "syncInputSettings": {"left": 8, "top": 18, "width": 160, "height": 14},
+    "returnStrict": {"left": 8, "top": 45, "width": 77, "height": 18},
+    "returnUnblocked": {"left": 91, "top": 45, "width": 77, "height": 18}
   }
 }

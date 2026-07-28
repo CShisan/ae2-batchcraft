@@ -5,7 +5,7 @@
   ],
   "generatedBackground": {
     "width": 176,
-    "height": 87
+    "height": 142
   },
   "text": {
     "dialog_title": {
@@ -16,12 +16,30 @@
         "left": 8,
         "top": 6
       }
+    },
+    "output_direction": {
+      "text": {
+        "translate": "gui.ae2_batchcraft.output_direction"
+      },
+      "position": {
+        "left": 8,
+        "top": 24
+      }
+    },
+    "output_form": {
+      "text": {
+        "translate": "gui.ae2_batchcraft.material_output_form"
+      },
+      "position": {
+        "left": 8,
+        "top": 104
+      }
     }
   },
   "widgets": {
     "auto": {
       "left": 118,
-      "top": 18,
+      "top": 36,
       "width": 50,
       "height": 18
     },
@@ -33,37 +51,55 @@
     },
     "front": {
       "left": 63,
-      "top": 18,
+      "top": 36,
       "width": 50,
       "height": 18
     },
     "left": {
       "left": 8,
-      "top": 39,
+      "top": 57,
       "width": 50,
       "height": 18
     },
     "up": {
       "left": 63,
-      "top": 39,
+      "top": 57,
       "width": 50,
       "height": 18
     },
     "right": {
       "left": 118,
-      "top": 39,
+      "top": 57,
       "width": 50,
       "height": 18
     },
     "down": {
       "left": 8,
-      "top": 60,
+      "top": 78,
       "width": 50,
       "height": 18
     },
     "opposite": {
       "left": 63,
-      "top": 60,
+      "top": 78,
+      "width": 50,
+      "height": 18
+    },
+    "outputNormal": {
+      "left": 8,
+      "top": 116,
+      "width": 50,
+      "height": 18
+    },
+    "outputDrop": {
+      "left": 63,
+      "top": 116,
+      "width": 50,
+      "height": 18
+    },
+    "outputPlace": {
+      "left": 118,
+      "top": 116,
       "width": 50,
       "height": 18
     }

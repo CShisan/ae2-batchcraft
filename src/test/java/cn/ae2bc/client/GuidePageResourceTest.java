@@ -145,7 +145,7 @@ class GuidePageResourceTest {
         assertTrue(screen.contains("\"PLAYER_INVENTORY\""));
         assertTrue(screen.contains("\"PLAYER_HOTBAR\""));
         assertTrue(screen.contains("\"width\": 176"));
-        assertTrue(screen.contains("\"height\": 224"));
+        assertTrue(screen.contains("\"height\": 228"));
         assertFalse(screen.contains("\"scale\""));
         assertTrue(screen.contains("\"align\": \"CENTER\""));
         assertTrue(screen.contains("gui.ae2_batchcraft.component_placer.cable"));

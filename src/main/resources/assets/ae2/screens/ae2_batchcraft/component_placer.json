@@ -5,22 +5,22 @@
   ],
   "generatedBackground": {
     "width": 176,
-    "height": 224
+    "height": 228
   },
   "slots": {
     "AE2_BATCHCRAFT_CABLE_MARKER": {
       "left": 26,
-      "top": 18,
+      "top": 22,
       "grid": "HORIZONTAL"
     },
     "AE2_BATCHCRAFT_PART_MARKER": {
       "left": 78,
-      "top": 18,
+      "top": 22,
       "grid": "HORIZONTAL"
     },
     "STORAGE": {
       "left": 8,
-      "top": 111,
+      "top": 115,
       "grid": "HORIZONTAL"
     },
     "PLAYER_INVENTORY": {
@@ -50,7 +50,7 @@
       },
       "position": {
         "left": 8,
-        "top": 21
+        "top": 25
       }
     },
     "part_label": {
@@ -59,7 +59,7 @@
       },
       "position": {
         "left": 60,
-        "top": 21
+        "top": 25
       }
     },
     "frequencyText": {
@@ -68,7 +68,7 @@
       },
       "position": {
         "left": 150,
-        "top": 21
+        "top": 25
       },
       "align": "RIGHT"
     },
@@ -78,7 +78,7 @@
       },
       "position": {
         "left": 36,
-        "top": 40
+        "top": 44
       },
       "align": "CENTER"
     },
@@ -88,7 +88,7 @@
       },
       "position": {
         "left": 36,
-        "top": 55
+        "top": 59
       },
       "align": "CENTER"
     },
@@ -98,7 +98,7 @@
       },
       "position": {
         "left": 36,
-        "top": 70
+        "top": 74
       },
       "align": "CENTER"
     },
@@ -108,7 +108,7 @@
       },
       "position": {
         "left": 8,
-        "top": 102
+        "top": 106
       }
     },
     "aeLinkWarning": {
@@ -118,18 +118,18 @@
       },
       "position": {
         "left": 168,
-        "top": 102
+        "top": 106
       },
       "align": "RIGHT"
     },
     "aeLinkConnected": {
       "text": {
-        "translate": "gui.ae2.Linked",
+        "translate": "gui.ae2_batchcraft.component_placer.linked",
         "color": "green"
       },
       "position": {
         "left": 168,
-        "top": 102
+        "top": 106
       },
       "align": "RIGHT"
     },
@@ -139,26 +139,26 @@
       },
       "position": {
         "left": 8,
-        "top": 130
+        "top": 134
       }
     }
   },
   "widgets": {
-    "frequency": { "left": 154, "top": 18, "width": 14, "height": 14 },
-    "directionFront": { "left": 106, "top": 37, "width": 32, "height": 14 },
-    "directionLeft": { "left": 72, "top": 52, "width": 32, "height": 14 },
-    "directionUp": { "left": 106, "top": 52, "width": 32, "height": 14 },
-    "directionRight": { "left": 140, "top": 52, "width": 32, "height": 14 },
-    "directionDown": { "left": 72, "top": 67, "width": 32, "height": 14 },
-    "directionBack": { "left": 106, "top": 67, "width": 32, "height": 14 },
-    "offsetXMinus": { "left": 8, "top": 37, "width": 14, "height": 14 },
-    "offsetXPlus": { "left": 51, "top": 37, "width": 14, "height": 14 },
-    "offsetYMinus": { "left": 8, "top": 52, "width": 14, "height": 14 },
-    "offsetYPlus": { "left": 51, "top": 52, "width": 14, "height": 14 },
-    "offsetZMinus": { "left": 8, "top": 67, "width": 14, "height": 14 },
-    "offsetZPlus": { "left": 51, "top": 67, "width": 14, "height": 14 },
-    "resetOffsets": { "left": 8, "top": 84, "width": 52, "height": 14 },
-    "clearSelection": { "left": 62, "top": 84, "width": 52, "height": 14 },
-    "execute": { "left": 116, "top": 84, "width": 52, "height": 14 }
+    "frequency": { "left": 154, "top": 22, "width": 14, "height": 14 },
+    "directionFront": { "left": 106, "top": 41, "width": 32, "height": 14 },
+    "directionLeft": { "left": 72, "top": 56, "width": 32, "height": 14 },
+    "directionUp": { "left": 106, "top": 56, "width": 32, "height": 14 },
+    "directionRight": { "left": 140, "top": 56, "width": 32, "height": 14 },
+    "directionDown": { "left": 72, "top": 71, "width": 32, "height": 14 },
+    "directionBack": { "left": 106, "top": 71, "width": 32, "height": 14 },
+    "offsetXMinus": { "left": 8, "top": 41, "width": 14, "height": 14 },
+    "offsetXPlus": { "left": 51, "top": 41, "width": 14, "height": 14 },
+    "offsetYMinus": { "left": 8, "top": 56, "width": 14, "height": 14 },
+    "offsetYPlus": { "left": 51, "top": 56, "width": 14, "height": 14 },
+    "offsetZMinus": { "left": 8, "top": 71, "width": 14, "height": 14 },
+    "offsetZPlus": { "left": 51, "top": 71, "width": 14, "height": 14 },
+    "resetOffsets": { "left": 8, "top": 88, "width": 52, "height": 14 },
+    "clearSelection": { "left": 62, "top": 88, "width": 52, "height": 14 },
+    "execute": { "left": 116, "top": 88, "width": 52, "height": 14 }
   }
 }

@@ -7,6 +7,8 @@ import appeng.api.stacks.KeyCounter;
 import appeng.me.helpers.MachineSource;
 import cn.ae2bc.link.RoundRobin;
 import cn.ae2bc.part.PatternP2PTunnelPart;
+import cn.ae2bc.part.PatternTaskEndpoint;
+import cn.ae2bc.part.PatternP2PUnitManagerPart;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 
@@ -19,6 +21,8 @@ import java.util.Objects;
 public final class PatternP2PTunnelInputLogic {
     private static final String ROUND_ROBIN_CURSOR = "RoundRobinCursor";
     private static final String RETURN_MODE = "ReturnMode";
+    private static final String PATTERN_P2P_UNIT_CONFIGURATION = "PatternP2PUnitConfiguration";
+    private static final String PATTERN_P2P_UNIT_CONFIGURATION_REVISION = "PatternP2PUnitConfigurationRevision";
 
     private final IManagedGridNode mainNode;
     private final PatternP2PTunnelPart input;
@@ -31,6 +35,8 @@ public final class PatternP2PTunnelInputLogic {
     private int roundRobinCursor;
     private long cursorSaveTick = Long.MIN_VALUE;
     private ReturnMode returnMode = ReturnMode.UNBLOCKED;
+    private PatternP2PUnitConfiguration patternP2PUnitConfiguration = PatternP2PUnitConfiguration.DEFAULT;
+    private long patternP2PUnitConfigurationRevision;
 
     public PatternP2PTunnelInputLogic(IManagedGridNode mainNode, PatternP2PTunnelPart input) {
         this.mainNode = mainNode;
@@ -44,8 +50,8 @@ public final class PatternP2PTunnelInputLogic {
         }
         if (outputAvailabilityDirty) {
             hasAvailableOutput = false;
-            for (var output : getOutputSnapshot()) {
-                if (output.isOperationalOutput() && output.getOutputLogic().canAcceptTask()) {
+            for (var output : getTaskEndpoints()) {
+                if (output.isOperationalTaskEndpoint() && output.canAcceptTask()) {
                     hasAvailableOutput = true;
                     break;
                 }
@@ -65,6 +71,25 @@ public final class PatternP2PTunnelInputLogic {
             return;
         }
         returnMode = mode;
+        setPatternP2PUnitConfiguration(patternP2PUnitConfiguration.withReturnMode(mode));
+    }
+
+    public PatternP2PUnitConfiguration getPatternP2PUnitConfiguration() {
+        return patternP2PUnitConfiguration;
+    }
+
+    public long getPatternP2PUnitConfigurationRevision() {
+        return patternP2PUnitConfigurationRevision;
+    }
+
+    public void setPatternP2PUnitConfiguration(PatternP2PUnitConfiguration configuration) {
+        Objects.requireNonNull(configuration, "configuration");
+        if (patternP2PUnitConfiguration.equals(configuration)) {
+            return;
+        }
+        patternP2PUnitConfiguration = configuration;
+        returnMode = configuration.returnMode();
+        patternP2PUnitConfigurationRevision++;
         synchronizeSettings();
         input.getHost().markForSave();
     }
@@ -72,6 +97,10 @@ public final class PatternP2PTunnelInputLogic {
     public void synchronizeSettings() {
         for (var output : getOutputSnapshot()) {
             output.getOutputLogic().applyInputSettings(returnMode);
+        }
+        for (var manager : getPatternP2PUnitManagers()) {
+            manager.getLogic().applyMainConfiguration(patternP2PUnitConfiguration,
+                    patternP2PUnitConfigurationRevision);
         }
     }
 
@@ -89,7 +118,7 @@ public final class PatternP2PTunnelInputLogic {
             return false;
         }
 
-        List<PatternP2PTunnelPart> outputs = getOutputSnapshot();
+        List<PatternTaskEndpoint> outputs = getTaskEndpoints();
         int size = outputs.size();
         var metadata = patternMetadataCache.get(pattern);
         if (!metadata.isValid()) {
@@ -98,10 +127,10 @@ public final class PatternP2PTunnelInputLogic {
         for (int offset = 0; offset < size; offset++) {
             int index = RoundRobin.index(roundRobinCursor, offset, size);
             var output = outputs.get(index);
-            if (!output.isOperationalOutput() || !output.getOutputLogic().canAcceptTask()) {
+            if (!output.isOperationalTaskEndpoint() || !output.canAcceptTask()) {
                 continue;
             }
-            if (output.getOutputLogic().tryAcceptPattern(pattern, metadata, inputs, actionSource)) {
+            if (output.tryAcceptPattern(pattern, metadata, inputs, actionSource)) {
                 roundRobinCursor = RoundRobin.advance(index, size);
                 markCursorForSave();
                 return true;
@@ -113,12 +142,28 @@ public final class PatternP2PTunnelInputLogic {
     private List<PatternP2PTunnelPart> getOutputSnapshot() {
         if (outputSnapshotDirty) {
             outputSnapshot = input.getOutputs().stream()
-                    .filter(PatternP2PTunnelPart::isOutput)
+                    .filter(PatternP2PTunnelPart::isStandardOutput)
                     .toList();
             outputSnapshotDirty = false;
             outputAvailabilityDirty = true;
         }
         return outputSnapshot;
+    }
+
+    private List<PatternTaskEndpoint> getTaskEndpoints() {
+        var outputs = new java.util.ArrayList<PatternTaskEndpoint>(getOutputSnapshot());
+        outputs.addAll(getPatternP2PUnitManagers());
+        return outputs;
+    }
+
+    private List<PatternP2PUnitManagerPart> getPatternP2PUnitManagers() {
+        var grid = mainNode.getGrid();
+        if (grid == null || !input.hasConfiguredFrequency()) {
+            return List.of();
+        }
+        return grid.getMachines(PatternP2PUnitManagerPart.class).stream()
+                .filter(manager -> manager.getFrequency() == input.getFrequency())
+                .toList();
     }
 
     private void markCursorForSave() {
@@ -138,10 +183,17 @@ public final class PatternP2PTunnelInputLogic {
         roundRobinCursor = data.getInt(ROUND_ROBIN_CURSOR);
         returnMode = data.contains(RETURN_MODE)
                 ? ReturnMode.fromId(data.getByte(RETURN_MODE)) : ReturnMode.UNBLOCKED;
+        patternP2PUnitConfiguration = data.contains(PATTERN_P2P_UNIT_CONFIGURATION)
+                ? PatternP2PUnitConfiguration.read(data.getCompound(PATTERN_P2P_UNIT_CONFIGURATION))
+                : PatternP2PUnitConfiguration.DEFAULT.withReturnMode(returnMode);
+        returnMode = patternP2PUnitConfiguration.returnMode();
+        patternP2PUnitConfigurationRevision = data.getLong(PATTERN_P2P_UNIT_CONFIGURATION_REVISION);
     }
 
     public void writeToNBT(CompoundTag data, HolderLookup.Provider registries) {
         data.putInt(ROUND_ROBIN_CURSOR, roundRobinCursor);
         data.putByte(RETURN_MODE, (byte) returnMode.getId());
+        data.put(PATTERN_P2P_UNIT_CONFIGURATION, patternP2PUnitConfiguration.write());
+        data.putLong(PATTERN_P2P_UNIT_CONFIGURATION_REVISION, patternP2PUnitConfigurationRevision);
     }
 }

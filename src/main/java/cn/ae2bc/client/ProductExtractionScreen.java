@@ -11,18 +11,16 @@ import appeng.menu.SlotSemantics;
 import cn.ae2bc.logic.ProductExtractionSettings;
 import cn.ae2bc.menu.ProductExtractionMenu;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
 public final class ProductExtractionScreen extends AEBaseScreen<ProductExtractionMenu> {
-    private EditBox intervalInput;
-    private EditBox amountInput;
+    private ValidatedIntegerField intervalInput;
+    private ValidatedIntegerField amountInput;
     private final AECheckbox modeToggle;
     private final AE2Button intervalReset;
     private final AE2Button amountReset;
-    private boolean syncing;
 
     public ProductExtractionScreen(ProductExtractionMenu menu, Inventory playerInventory,
                                    Component title, ScreenStyle style) {
@@ -42,12 +40,16 @@ public final class ProductExtractionScreen extends AEBaseScreen<ProductExtractio
     @Override
     protected void init() {
         super.init();
-        intervalInput = addRenderableWidget(new EditBox(font, leftPos + 58, topPos + 19, 40, 16,
-                Component.translatable("gui.ae2_batchcraft.product_extraction.interval")));
-        amountInput = addRenderableWidget(new EditBox(font, leftPos + 58, topPos + 40, 40, 16,
-                Component.translatable("gui.ae2_batchcraft.product_extraction.amount")));
-        intervalInput.setResponder(value -> updateInterval());
-        amountInput.setResponder(value -> updateAmount());
+        intervalInput = addRenderableWidget(new ValidatedIntegerField(font,
+                leftPos + 58, topPos + 21, 40, 16,
+                Component.translatable("gui.ae2_batchcraft.product_extraction.interval"),
+                () -> ProductExtractionSettings.MIN_INTERVAL,
+                () -> ProductExtractionSettings.MAX_INTERVAL, menu::setInterval));
+        amountInput = addRenderableWidget(new ValidatedIntegerField(font,
+                leftPos + 58, topPos + 42, 40, 16,
+                Component.translatable("gui.ae2_batchcraft.product_extraction.amount"),
+                () -> ProductExtractionSettings.MIN_AMOUNT,
+                () -> ProductExtractionSettings.MAX_AMOUNT, menu::setAmount));
         syncInputs();
     }
 
@@ -61,11 +63,15 @@ public final class ProductExtractionScreen extends AEBaseScreen<ProductExtractio
     }
 
     @Override
+    public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
+        guiGraphics.hLine(7, imageWidth - 8, 17, 0xFF808080);
+        guiGraphics.hLine(7, imageWidth - 8, 18, 0xFFFFFFFF);
+    }
+
+    @Override
     protected void updateBeforeRender() {
         super.updateBeforeRender();
-        if (!intervalInput.isFocused() && !amountInput.isFocused()) {
-            syncInputs();
-        }
+        syncInputs();
         modeToggle.active = menu.cardInstalled;
         modeToggle.setSelected(menu.whitelist);
         intervalReset.active = menu.cardInstalled
@@ -78,39 +84,11 @@ public final class ProductExtractionScreen extends AEBaseScreen<ProductExtractio
         if (intervalInput == null || amountInput == null) {
             return;
         }
-        syncing = true;
-        intervalInput.setValue(Integer.toString(menu.interval));
-        amountInput.setValue(Integer.toString(menu.amount));
+        intervalInput.syncValue(menu.interval);
+        amountInput.syncValue(menu.amount);
         boolean active = menu.cardInstalled;
         intervalInput.setEditable(active);
         amountInput.setEditable(active);
-        syncing = false;
-    }
-
-    private void updateInterval() {
-        if (syncing || !menu.cardInstalled) {
-            return;
-        }
-        try {
-            int value = Integer.parseInt(intervalInput.getValue());
-            if (value >= ProductExtractionSettings.MIN_INTERVAL && value <= ProductExtractionSettings.MAX_INTERVAL) {
-                menu.setInterval(value);
-            }
-        } catch (NumberFormatException ignored) {
-        }
-    }
-
-    private void updateAmount() {
-        if (syncing || !menu.cardInstalled) {
-            return;
-        }
-        try {
-            int value = Integer.parseInt(amountInput.getValue());
-            if (value >= ProductExtractionSettings.MIN_AMOUNT && value <= ProductExtractionSettings.MAX_AMOUNT) {
-                menu.setAmount(value);
-            }
-        } catch (NumberFormatException ignored) {
-        }
     }
 
     private void changeFilterMode() {

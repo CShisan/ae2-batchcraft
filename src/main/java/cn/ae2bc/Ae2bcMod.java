@@ -9,6 +9,8 @@ import appeng.items.tools.powered.WirelessTerminalItem;
 import appeng.items.tools.powered.powersink.PoweredItemCapabilities;
 import cn.ae2bc.part.PatternP2PTunnelPart;
 import cn.ae2bc.part.PatternP2PTunnelEnergyPart;
+import cn.ae2bc.part.PatternP2PUnitPortPart;
+import cn.ae2bc.part.PatternP2PUnitManagerPart;
 import cn.ae2bc.item.WirelessComponentPlacerItem;
 import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.registry.ModMenus;
@@ -29,7 +31,9 @@ public final class Ae2bcMod {
 
     public Ae2bcMod(IEventBus modBus) {
         PatternP2PTunnelPart.registerModels();
+        PatternP2PUnitManagerPart.registerModels();
         PatternP2PTunnelEnergyPart.registerModels();
+        PatternP2PUnitPortPart.registerModels();
         ModContent.register(modBus);
         ModMenus.register(modBus);
         modBus.addListener(Ae2bcMod::registerPartCapabilities);
@@ -56,20 +60,32 @@ public final class Ae2bcMod {
                 (part, side) -> part.isOutput() ? null : part,
                 PatternP2PTunnelPart.class);
         event.register(AECapabilities.GENERIC_INTERNAL_INV,
-                (part, side) -> part.isOutput() ? part.getReturnInventory() : null,
+                (part, side) -> part.isStandardOutput() ? part.getReturnInventory() : null,
                 PatternP2PTunnelPart.class);
         event.register(AECapabilities.ME_STORAGE,
-                (part, side) -> part.isOutput() ? part.getReturnInventory() : null,
+                (part, side) -> part.isStandardOutput() ? part.getReturnInventory() : null,
                 PatternP2PTunnelPart.class);
         event.register(Capabilities.ItemHandler.BLOCK,
-                (part, side) -> part.isOutput() ? part.getReturnItemHandler() : null,
+                (part, side) -> part.isStandardOutput() ? part.getReturnItemHandler() : null,
                 PatternP2PTunnelPart.class);
         event.register(Capabilities.FluidHandler.BLOCK,
-                (part, side) -> part.isOutput() ? part.getReturnFluidHandler() : null,
+                (part, side) -> part.isStandardOutput() ? part.getReturnFluidHandler() : null,
                 PatternP2PTunnelPart.class);
         event.register(Capabilities.EnergyStorage.BLOCK,
                 (part, side) -> part.getEnergyStorage(),
                 PatternP2PTunnelEnergyPart.class);
+        event.register(AECapabilities.GENERIC_INTERNAL_INV,
+                (part, side) -> part.isReturnPort() ? part.getReturnInventory() : null,
+                PatternP2PUnitPortPart.class);
+        event.register(AECapabilities.ME_STORAGE,
+                (part, side) -> part.isReturnPort() ? part.getReturnStorage() : null,
+                PatternP2PUnitPortPart.class);
+        event.register(Capabilities.ItemHandler.BLOCK,
+                (part, side) -> part.isReturnPort() ? part.getReturnItemHandler() : null,
+                PatternP2PUnitPortPart.class);
+        event.register(Capabilities.FluidHandler.BLOCK,
+                (part, side) -> part.isReturnPort() ? part.getReturnFluidHandler() : null,
+                PatternP2PUnitPortPart.class);
     }
 
     private static void registerItemCapabilities(RegisterCapabilitiesEvent event) {

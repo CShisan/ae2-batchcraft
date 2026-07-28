@@ -5,6 +5,7 @@ import appeng.crafting.pattern.AEProcessingPattern;
 import appeng.parts.encoding.PatternEncodingLogic;
 import appeng.util.ConfigInventory;
 import cn.ae2bc.pattern.InputDirectionData;
+import cn.ae2bc.pattern.MaterialInputConfigData;
 import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.extension.PatternEncodingLogicExtension;
 import net.minecraft.core.HolderLookup;
@@ -25,13 +26,14 @@ import java.util.Objects;
 public abstract class PatternEncodingLogicMixin implements PatternEncodingLogicExtension {
     @Unique
     private static final String AE2BC_INPUT_DIRECTIONS_NBT = "InputDirections";
+    private static final String AE2BC_MATERIAL_INPUT_CONFIG_NBT = "MaterialInputConfig";
 
     @Shadow
     @Final
     private ConfigInventory encodedInputInv;
 
     @Unique
-    private InputDirectionData ae2bc$inputDirections = InputDirectionData.EMPTY;
+    private MaterialInputConfigData ae2bc$materialInputConfig = MaterialInputConfigData.EMPTY;
     @Unique
     private final AEKey[] ae2bc$inputKeys = new AEKey[AEProcessingPattern.MAX_INPUT_SLOTS];
 
@@ -42,54 +44,66 @@ public abstract class PatternEncodingLogicMixin implements PatternEncodingLogicE
 
     @Inject(method = "onEncodedInputChanged", at = @At("TAIL"))
     private void ae2bc$clearDirectionsForReplacedInputs(CallbackInfo ci) {
-        InputDirectionData updated = ae2bc$inputDirections;
+        MaterialInputConfigData updated = ae2bc$materialInputConfig;
         for (int slot = 0; slot < ae2bc$inputKeys.length; slot++) {
             AEKey current = encodedInputInv.getKey(slot);
             if (!Objects.equals(ae2bc$inputKeys[slot], current)) {
-                updated = updated.withDirection(slot, null);
+                updated = updated.clearSlot(slot);
                 ae2bc$inputKeys[slot] = current;
             }
         }
-        ae2bc$inputDirections = updated;
+        ae2bc$materialInputConfig = updated;
     }
 
     @Inject(method = "loadEncodedPattern", at = @At("HEAD"))
     private void ae2bc$resetBeforeLoadingPattern(ItemStack pattern, CallbackInfo ci) {
         if (!pattern.isEmpty()) {
-            ae2bc$inputDirections = InputDirectionData.EMPTY;
+            ae2bc$materialInputConfig = MaterialInputConfigData.EMPTY;
         }
     }
 
     @Inject(method = "loadProcessingPattern", at = @At("TAIL"))
     private void ae2bc$loadDirectionsFromPattern(AEProcessingPattern pattern, CallbackInfo ci) {
-        InputDirectionData directions = pattern.getDefinition().get(ModContent.INPUT_DIRECTIONS.get());
-        ae2bc$inputDirections = directions == null ? InputDirectionData.EMPTY : directions;
+        MaterialInputConfigData config = pattern.getDefinition().get(ModContent.MATERIAL_INPUT_CONFIG.get());
+        if (config == null) {
+            InputDirectionData directions = pattern.getDefinition().get(ModContent.INPUT_DIRECTIONS.get());
+            config = MaterialInputConfigData.fromLegacy(directions);
+        }
+        ae2bc$materialInputConfig = config;
         ae2bc$snapshotInputKeys();
     }
 
     @Inject(method = "readFromNBT", at = @At("TAIL"))
     private void ae2bc$readDirections(CompoundTag data, HolderLookup.Provider registries, CallbackInfo ci) {
-        ae2bc$inputDirections = InputDirectionData.fromPacked(data.getLongArray(AE2BC_INPUT_DIRECTIONS_NBT));
+        if (data.contains(AE2BC_MATERIAL_INPUT_CONFIG_NBT)) {
+            ae2bc$materialInputConfig = MaterialInputConfigData.fromPacked(
+                    data.getLongArray(AE2BC_MATERIAL_INPUT_CONFIG_NBT));
+        } else {
+            ae2bc$materialInputConfig = MaterialInputConfigData.fromLegacy(
+                    InputDirectionData.fromPacked(data.getLongArray(AE2BC_INPUT_DIRECTIONS_NBT)));
+        }
         ae2bc$snapshotInputKeys();
     }
 
     @Inject(method = "writeToNBT", at = @At("TAIL"))
     private void ae2bc$writeDirections(CompoundTag data, HolderLookup.Provider registries, CallbackInfo ci) {
-        if (ae2bc$inputDirections.isEmpty()) {
+        if (ae2bc$materialInputConfig.isEmpty()) {
+            data.remove(AE2BC_MATERIAL_INPUT_CONFIG_NBT);
             data.remove(AE2BC_INPUT_DIRECTIONS_NBT);
         } else {
-            data.putLongArray(AE2BC_INPUT_DIRECTIONS_NBT, ae2bc$inputDirections.toPacked());
+            data.putLongArray(AE2BC_MATERIAL_INPUT_CONFIG_NBT, ae2bc$materialInputConfig.toPacked());
+            data.remove(AE2BC_INPUT_DIRECTIONS_NBT);
         }
     }
 
     @Override
-    public InputDirectionData ae2bc$getInputDirections() {
-        return ae2bc$inputDirections;
+    public MaterialInputConfigData ae2bc$getMaterialInputConfig() {
+        return ae2bc$materialInputConfig;
     }
 
     @Override
-    public void ae2bc$setInputDirections(InputDirectionData directions) {
-        ae2bc$inputDirections = Objects.requireNonNullElse(directions, InputDirectionData.EMPTY);
+    public void ae2bc$setMaterialInputConfig(MaterialInputConfigData config) {
+        ae2bc$materialInputConfig = Objects.requireNonNullElse(config, MaterialInputConfigData.EMPTY);
         ((PatternEncodingLogic) (Object) this).saveChanges();
     }
 
