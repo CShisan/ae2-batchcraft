@@ -8,6 +8,7 @@ import appeng.api.implementations.blockentities.ICraftingMachine;
 import appeng.api.implementations.blockentities.PatternContainerGroup;
 import appeng.api.implementations.items.IMemoryCard;
 import appeng.api.implementations.items.MemoryCardMessages;
+import appeng.api.features.P2PTunnelAttunement;
 import appeng.api.parts.IPartItem;
 import appeng.api.parts.IPartModel;
 import appeng.api.parts.PartHelper;
@@ -408,6 +409,11 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
                 openConfigurationMenu(player);
             }
             return true;
+        }
+        // The base P2P implementation turns a matching cable into an AE2 tunnel type.
+        // Pattern P2P tunnels must retain their custom type when wiring their rear face.
+        if (!P2PTunnelAttunement.getTunnelPartByTriggerItem(heldItem).isEmpty()) {
+            return false;
         }
         if (!(heldItem.getItem() instanceof IMemoryCard memoryCard)) {
             return super.onUseItemOn(heldItem, player, hand, pos);
