@@ -13,6 +13,7 @@ import net.minecraft.world.inventory.MenuType;
 public final class PatternP2PTunnelOutputMenu extends AEBaseMenu {
     private static final String SET_RETURN_MODE = "setReturnMode";
     private static final String SET_SYNC_INPUT_SETTINGS = "setSyncInputSettings";
+    private static final String RESET_TASK_STATE = "resetTaskState";
 
     public static final MenuType<PatternP2PTunnelOutputMenu> TYPE = MenuTypeBuilder
             .create(PatternP2PTunnelOutputMenu::new, PatternP2PTunnelPart.class)
@@ -32,6 +33,7 @@ public final class PatternP2PTunnelOutputMenu extends AEBaseMenu {
         this.host = host;
         registerClientAction(SET_RETURN_MODE, ReturnMode.class, this::handleSetReturnMode);
         registerClientAction(SET_SYNC_INPUT_SETTINGS, Boolean.class, this::handleSetSyncInputSettings);
+        registerClientAction(RESET_TASK_STATE, this::handleResetTaskState);
     }
 
     @Override
@@ -54,6 +56,10 @@ public final class PatternP2PTunnelOutputMenu extends AEBaseMenu {
         sendClientAction(SET_SYNC_INPUT_SETTINGS, enabled);
     }
 
+    public void resetTaskState() {
+        sendClientAction(RESET_TASK_STATE);
+    }
+
     private void handleSetReturnMode(ReturnMode mode) {
         if (isServerSide() && host.isStandardOutput()
                 && mode != null && !host.getOutputLogic().isSyncInputSettings()) {
@@ -64,6 +70,12 @@ public final class PatternP2PTunnelOutputMenu extends AEBaseMenu {
     private void handleSetSyncInputSettings(Boolean enabled) {
         if (isServerSide() && host.isStandardOutput() && enabled != null) {
             host.getOutputLogic().setSyncInputSettings(enabled);
+        }
+    }
+
+    private void handleResetTaskState() {
+        if (isServerSide() && host.isStandardOutput()) {
+            host.resetTaskState();
         }
     }
 

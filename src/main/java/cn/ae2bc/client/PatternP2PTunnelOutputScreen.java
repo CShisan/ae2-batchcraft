@@ -15,6 +15,7 @@ import java.util.Map;
 
 public final class PatternP2PTunnelOutputScreen extends AEBaseScreen<PatternP2PTunnelOutputMenu> {
     private final AECheckbox syncInputSettings;
+    private final AE2Button resetTask;
     private final Map<ReturnMode, AE2Button> returnButtons = new EnumMap<>(ReturnMode.class);
 
     public PatternP2PTunnelOutputScreen(PatternP2PTunnelOutputMenu menu, Inventory playerInventory,
@@ -36,6 +37,10 @@ public final class PatternP2PTunnelOutputScreen extends AEBaseScreen<PatternP2PT
         syncInputSettings.setTooltip(Tooltip.create(Component.translatable(
                 "gui.ae2_batchcraft.sync_input_settings.tooltip")));
         syncInputSettings.setChangeListener(() -> menu.setSyncInputSettings(syncInputSettings.isSelected()));
+        resetTask = widgets.addButton("resetTask",
+                Component.translatable("gui.ae2_batchcraft.reset_task"),
+                () -> TaskResetConfirmation.open(this, Component.translatable(
+                        "gui.ae2_batchcraft.reset_task.confirm.output"), menu::resetTaskState));
     }
 
     @Override

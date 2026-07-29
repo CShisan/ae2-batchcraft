@@ -19,6 +19,7 @@
     "returnStrict": {"left": 8, "top": 54, "width": 77, "height": 18},
     "returnUnblocked": {"left": 91, "top": 54, "width": 77, "height": 18},
     "breakRecovery": {"left": 148, "top": 41, "width": 20, "height": 14},
-    "redstoneMode": {"left": 96, "top": 38, "width": 72, "height": 18}
+    "redstoneMode": {"left": 96, "top": 38, "width": 72, "height": 18},
+    "resetTask": {"left": 8, "top": 76, "width": 160, "height": 18}
   }
 }

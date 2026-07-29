@@ -150,9 +150,21 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
     }
 
     @Override
+    public boolean isTaskActive() {
+        return outputLogic != null && outputLogic.isTaskActive();
+    }
+
+    @Override
     public boolean tryAcceptPattern(IPatternDetails pattern, cn.ae2bc.logic.PatternDispatchMetadata metadata,
                                     KeyCounter[] inputs, appeng.api.networking.security.IActionSource source) {
         return outputLogic != null && outputLogic.tryAcceptPattern(pattern, metadata, inputs, source);
+    }
+
+    @Override
+    public void resetTaskState() {
+        if (outputLogic != null) {
+            outputLogic.resetTaskState();
+        }
     }
 
     public RemoteReturnInventory getReturnInventory() {

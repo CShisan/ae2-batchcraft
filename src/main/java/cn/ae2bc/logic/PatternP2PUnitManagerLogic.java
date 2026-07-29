@@ -69,8 +69,25 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         return primaryKey != null && remainingPrimary > 0;
     }
 
+    public boolean hasTaskState() {
+        return isTaskActive() || !pendingInputs.isEmpty();
+    }
+
     public boolean isTaskOperational() {
         return isTaskActive() && mainNode.isActive() && manager.hasConfiguredFrequency();
+    }
+
+    public void resetTaskState() {
+        if (!hasTaskState()) {
+            return;
+        }
+        pendingInputs.clear();
+        declaredOutputs.clear();
+        primaryKey = null;
+        remainingPrimary = 0;
+        changed();
+        wakePorts();
+        manager.notifyInputAvailabilityChanged();
     }
 
     public PatternP2PUnitConfiguration getEffectiveConfiguration() {

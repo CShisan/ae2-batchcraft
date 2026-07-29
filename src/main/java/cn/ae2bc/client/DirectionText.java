@@ -10,10 +10,10 @@ public final class DirectionText {
     }
 
     public static Component name(@Nullable Direction direction, DirectionLayout layout) {
+        Component base = absoluteName(direction);
         if (direction == null) {
-            return Component.translatable("gui.ae2_batchcraft.direction.auto");
+            return base;
         }
-        Component base = Component.translatable("gui.ae2_batchcraft.direction." + direction.getName());
         if (direction == layout.left()) {
             return Component.translatable("gui.ae2_batchcraft.direction.left", base);
         }
@@ -21,5 +21,11 @@ public final class DirectionText {
             return Component.translatable("gui.ae2_batchcraft.direction.right", base);
         }
         return base;
+    }
+
+    public static Component absoluteName(@Nullable Direction direction) {
+        return direction == null
+                ? Component.translatable("gui.ae2_batchcraft.direction.auto")
+                : Component.translatable("gui.ae2_batchcraft.direction." + direction.getName());
     }
 }

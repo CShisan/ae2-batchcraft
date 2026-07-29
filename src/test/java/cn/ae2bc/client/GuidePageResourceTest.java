@@ -41,7 +41,7 @@ class GuidePageResourceTest {
     void bothItemsPointToTheEnglishDefaultGuidePage() throws Exception {
         String page = readText(ENGLISH_GUIDE);
 
-        assertTrue(page.startsWith("---\n"));
+        assertStartsWithFrontmatter(page);
         assertTrue(page.contains("title: AE2 BatchCraft"));
         assertTrue(page.contains("- ae2_batchcraft:pattern_p2p_tunnel_input"));
         assertTrue(page.contains("- ae2_batchcraft:pattern_p2p_tunnel_output"));
@@ -62,7 +62,7 @@ class GuidePageResourceTest {
     void simplifiedChineseGuideIsAvailableAsALocalizedOverride() throws Exception {
         String page = readText(CHINESE_GUIDE);
 
-        assertTrue(page.startsWith("---\n"));
+        assertStartsWithFrontmatter(page);
         assertTrue(page.contains("## 值得注意"));
         assertTrue(page.contains("## 样板 P2P 通道（输入）"));
         assertTrue(page.contains("## 样板 P2P 通道（输出）"));
@@ -170,6 +170,10 @@ class GuidePageResourceTest {
             assertNotNull(input, resource);
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
+    }
+
+    private static void assertStartsWithFrontmatter(String page) {
+        assertTrue(page.startsWith("---\n") || page.startsWith("---\r\n"));
     }
 
     private static void assertGuideParses(String page) {

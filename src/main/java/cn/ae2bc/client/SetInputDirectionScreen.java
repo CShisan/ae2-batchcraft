@@ -17,10 +17,12 @@ public final class SetInputDirectionScreen<C extends PatternEncodingTermMenu>
         extends AESubScreen<C, PatternEncodingTermScreen<C>> {
     private static final String STYLE = "/screens/ae2_batchcraft/set_input_direction.json";
     private final int inputSlot;
+    private final DirectionLayout layout;
 
     public SetInputDirectionScreen(PatternEncodingTermScreen<C> parent, int inputSlot, DirectionLayout layout) {
         super(parent, STYLE);
         this.inputSlot = inputSlot;
+        this.layout = layout;
 
         widgets.addButton("auto", DirectionText.name(null, layout), () -> selectDirection(null));
         widgets.addButton("front", DirectionText.name(layout.front(), layout), () -> selectDirection(layout.front()));
@@ -50,6 +52,19 @@ public final class SetInputDirectionScreen<C extends PatternEncodingTermMenu>
 
     private void selectOutputForm(MaterialOutputForm form) {
         ((PatternEncodingTermMenuExtension) getMenu()).ae2bc$setMaterialOutputForm(inputSlot, form);
+    }
+
+    @Override
+    protected void updateBeforeRender() {
+        super.updateBeforeRender();
+        var config = ((PatternEncodingTermMenuExtension) getMenu()).ae2bc$getMaterialInputConfig();
+        Component direction = DirectionText.name(config.getDirection(inputSlot), layout);
+        Component outputForm = Component.translatable("gui.ae2_batchcraft.material_output_form."
+                + config.getOutputForm(inputSlot).getSerializedName());
+        setTextContent("output_direction", Component.translatable(
+                "gui.ae2_batchcraft.output_direction_value", direction));
+        setTextContent("output_form", Component.translatable(
+                "gui.ae2_batchcraft.material_output_form_value", outputForm));
     }
 
     @Override

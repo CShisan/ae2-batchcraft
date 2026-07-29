@@ -117,6 +117,16 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
         return boundPatternP2PUnitId;
     }
 
+    public short getBoundFrequency() {
+        PatternP2PUnitManagerPart manager = getManager();
+        return manager == null ? boundFrequency : manager.getFrequency();
+    }
+
+    public boolean isBoundUnitTaskActive() {
+        PatternP2PUnitManagerPart manager = getManager();
+        return manager != null && manager.isTaskActive();
+    }
+
     public boolean isBoundTo(PatternP2PUnitManagerPart manager) {
         return boundPatternP2PUnitId != null && boundPatternP2PUnitId.equals(manager.getPatternP2PUnitId());
     }

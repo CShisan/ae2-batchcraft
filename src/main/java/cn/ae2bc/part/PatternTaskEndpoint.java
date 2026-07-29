@@ -11,6 +11,11 @@ public interface PatternTaskEndpoint {
 
     boolean canAcceptTask();
 
+    boolean isTaskActive();
+
     boolean tryAcceptPattern(IPatternDetails pattern, PatternDispatchMetadata metadata,
                              KeyCounter[] inputs, IActionSource source);
+
+    /** Clears the active task and permanently discards ingredients that have not been dispatched yet. */
+    void resetTaskState();
 }

@@ -18,6 +18,7 @@
   "client": [
     "AbstractContainerScreenInvoker",
     "AEBaseScreenAccessor",
+    "EncodedPatternItemMixin",
     "GuideMeMixin",
     "PatternEncodingTermScreenMixin",
     "PatternProviderScreenMixin",

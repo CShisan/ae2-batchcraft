@@ -17,6 +17,7 @@ public final class PatternP2PUnitManagerScreen extends PatternP2PUnitPagedScreen
     private final AECheckbox breakRecovery;
     private final Map<ReturnMode, AE2Button> returnButtons = new EnumMap<>(ReturnMode.class);
     private final AE2Button redstoneMode;
+    private final AE2Button resetTask;
     private ValidatedIntegerField strengthInput;
     private ValidatedIntegerField pulseTimeInput;
     private ValidatedIntegerField pulsePeriodInput;
@@ -39,6 +40,10 @@ public final class PatternP2PUnitManagerScreen extends PatternP2PUnitPagedScreen
         breakRecovery.setChangeListener(() -> menu.setBreakRecovery(breakRecovery.isSelected()));
         redstoneMode = widgets.addButton("redstoneMode", Component.empty(),
                 () -> menu.setRedstoneMode(menu.redstoneMode.next()));
+        resetTask = widgets.addButton("resetTask",
+                Component.translatable("gui.ae2_batchcraft.reset_task"),
+                () -> TaskResetConfirmation.open(this, Component.translatable(
+                        "gui.ae2_batchcraft.reset_task.confirm.unit"), menu::resetTaskState));
     }
 
     @Override
@@ -64,7 +69,7 @@ public final class PatternP2PUnitManagerScreen extends PatternP2PUnitPagedScreen
     @Override
     protected int getPageHeight(Page page) {
         return switch (page) {
-            case COMMON -> 96;
+            case COMMON -> 120;
             case BREAK -> 62;
             case REDSTONE -> 125;
         };
@@ -80,6 +85,7 @@ public final class PatternP2PUnitManagerScreen extends PatternP2PUnitPagedScreen
         for (var button : returnButtons.values()) {
             button.visible = common;
         }
+        resetTask.visible = common;
         breakRecovery.visible = breakPort;
         redstoneMode.visible = redstonePort;
         if (strengthInput != null) {

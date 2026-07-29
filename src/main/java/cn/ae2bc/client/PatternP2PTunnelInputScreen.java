@@ -16,6 +16,7 @@ public final class PatternP2PTunnelInputScreen extends PatternP2PUnitPagedScreen
     private final AE2Button unblockedButton;
     private final AECheckbox breakRecovery;
     private final AE2Button redstoneMode;
+    private final AE2Button resetTask;
     private ValidatedIntegerField strengthInput;
     private ValidatedIntegerField pulseTimeInput;
     private ValidatedIntegerField pulsePeriodInput;
@@ -39,6 +40,10 @@ public final class PatternP2PTunnelInputScreen extends PatternP2PUnitPagedScreen
         breakRecovery.setChangeListener(() -> menu.setBreakRecovery(breakRecovery.isSelected()));
         redstoneMode = widgets.addButton("redstoneMode", Component.empty(),
                 () -> menu.setRedstoneMode(menu.redstoneMode.next()));
+        resetTask = widgets.addButton("resetTask",
+                Component.translatable("gui.ae2_batchcraft.reset_task"),
+                () -> TaskResetConfirmation.open(this, Component.translatable(
+                        "gui.ae2_batchcraft.reset_task.confirm.input"), menu::resetTaskState));
     }
 
     @Override
@@ -64,7 +69,7 @@ public final class PatternP2PTunnelInputScreen extends PatternP2PUnitPagedScreen
     @Override
     protected int getPageHeight(Page page) {
         return switch (page) {
-            case COMMON -> 80;
+            case COMMON -> 100;
             case BREAK -> 62;
             case REDSTONE -> 125;
         };
@@ -78,6 +83,7 @@ public final class PatternP2PTunnelInputScreen extends PatternP2PUnitPagedScreen
 
         strictButton.visible = common;
         unblockedButton.visible = common;
+        resetTask.visible = common;
         breakRecovery.visible = breakPort;
         redstoneMode.visible = redstonePort;
         if (strengthInput != null) {

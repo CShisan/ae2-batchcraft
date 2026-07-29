@@ -19,6 +19,7 @@ public final class PatternP2PTunnelInputMenu extends AEBaseMenu {
     private static final String SET_REDSTONE_MODE = "setRedstoneMode";
     private static final String SET_PULSE_WIDTH = "setPulseWidth";
     private static final String SET_PULSE_PERIOD = "setPulsePeriod";
+    private static final String RESET_TASK_STATE = "resetTaskState";
 
     public static final MenuType<PatternP2PTunnelInputMenu> TYPE = MenuTypeBuilder
             .create(PatternP2PTunnelInputMenu::new, PatternP2PTunnelPart.class)
@@ -50,6 +51,7 @@ public final class PatternP2PTunnelInputMenu extends AEBaseMenu {
                 configuration().withRedstone(redstoneStrength, redstoneMode, value, pulsePeriod)));
         registerClientAction(SET_PULSE_PERIOD, Integer.class, value -> updateConfiguration(
                 configuration().withRedstone(redstoneStrength, redstoneMode, pulseWidth, value)));
+        registerClientAction(RESET_TASK_STATE, this::handleResetTaskState);
     }
 
     @Override
@@ -83,9 +85,19 @@ public final class PatternP2PTunnelInputMenu extends AEBaseMenu {
         sendClientAction(SET_PULSE_PERIOD, pulsePeriod);
     }
 
+    public void resetTaskState() {
+        sendClientAction(RESET_TASK_STATE);
+    }
+
     private void handleSetReturnMode(ReturnMode mode) {
         if (isServerSide() && !host.isOutput() && mode != null) {
             host.getInputLogic().setReturnMode(mode);
+        }
+    }
+
+    private void handleResetTaskState() {
+        if (isServerSide() && !host.isOutput()) {
+            host.getInputLogic().resetAllTaskStates();
         }
     }
 

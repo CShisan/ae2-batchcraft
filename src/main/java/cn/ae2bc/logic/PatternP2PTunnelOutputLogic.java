@@ -86,6 +86,20 @@ public final class PatternP2PTunnelOutputLogic {
                 : returnBatch.canPotentiallyAccept(returnMode);
     }
 
+    public boolean isTaskActive() {
+        return !pendingInputs.isEmpty() || returnBatch.isActive();
+    }
+
+    public void resetTaskState() {
+        if (!isTaskActive()) {
+            return;
+        }
+        boolean wasAvailable = canAcceptTask();
+        pendingInputs.clear();
+        returnBatch.clear();
+        persistStateChange(wasAvailable);
+    }
+
     public ReturnMode getReturnMode() {
         return returnMode;
     }

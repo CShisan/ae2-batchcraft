@@ -12,11 +12,20 @@ class PatternP2PUnitScreenResourceTest {
             "assets/ae2/screens/ae2_batchcraft/pp2p_unit_manager.json";
     private static final String INPUT_SCREEN =
             "assets/ae2/screens/ae2_batchcraft/pattern_p2p_tunnel_input.json";
+    private static final String OUTPUT_SCREEN =
+            "assets/ae2/screens/ae2_batchcraft/pattern_p2p_tunnel_output.json";
 
     @Test
     void configurationScreensExposeTheSharedPageNavigation() throws Exception {
         assertPagedConfigurationScreen(MANAGER_SCREEN);
         assertPagedConfigurationScreen(INPUT_SCREEN);
+    }
+
+    @Test
+    void taskEndpointsExposeTheResetTaskButton() throws Exception {
+        assertTrue(readText(MANAGER_SCREEN).contains("\"resetTask\""));
+        assertTrue(readText(INPUT_SCREEN).contains("\"resetTask\""));
+        assertTrue(readText(OUTPUT_SCREEN).contains("\"resetTask\""));
     }
 
     private static void assertPagedConfigurationScreen(String resource) throws Exception {

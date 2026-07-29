@@ -113,6 +113,35 @@ public final class PatternP2PTunnelInputLogic {
         outputAvailabilityDirty = true;
     }
 
+    public void resetAllTaskStates() {
+        var grid = mainNode.getGrid();
+        if (grid == null || !input.hasConfiguredFrequency()) {
+            return;
+        }
+        short frequency = input.getFrequency();
+        for (var output : grid.getMachines(PatternP2PTunnelPart.class)) {
+            if (output.isOutput() && output.getFrequency() == frequency) {
+                output.resetTaskState();
+            }
+        }
+        for (var manager : grid.getMachines(PatternP2PUnitManagerPart.class)) {
+            if (manager.getFrequency() == frequency) {
+                manager.resetTaskState();
+            }
+        }
+        invalidateOutputAvailability();
+    }
+
+    public int getActiveTaskCount() {
+        int count = 0;
+        for (var endpoint : getTaskEndpoints()) {
+            if (endpoint.isTaskActive()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     public boolean pushPattern(IPatternDetails pattern, KeyCounter[] inputs) {
         if (!mainNode.isActive() || !input.hasConfiguredFrequency()) {
             return false;

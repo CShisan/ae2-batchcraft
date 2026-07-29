@@ -121,9 +121,19 @@ public final class PatternP2PUnitManagerPart extends CablePart implements Patter
     }
 
     @Override
+    public boolean isTaskActive() {
+        return logic.hasTaskState();
+    }
+
+    @Override
     public boolean tryAcceptPattern(IPatternDetails pattern, PatternDispatchMetadata metadata,
                                     KeyCounter[] inputs, IActionSource source) {
         return logic.tryAcceptPattern(pattern, metadata, inputs);
+    }
+
+    @Override
+    public void resetTaskState() {
+        logic.resetTaskState();
     }
 
     public RemoteReturnInventory getReturnInventory() {
