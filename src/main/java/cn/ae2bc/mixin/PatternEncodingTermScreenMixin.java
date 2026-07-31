@@ -3,7 +3,7 @@ package cn.ae2bc.mixin;
 import appeng.client.gui.me.items.PatternEncodingTermScreen;
 import appeng.menu.me.items.PatternEncodingTermMenu;
 import appeng.parts.encoding.EncodingMode;
-import cn.ae2bc.client.SetInputDirectionScreen;
+import cn.ae2bc.client.MaterialOutputConfigScreen;
 import cn.ae2bc.extension.PatternEncodingTermMenuExtension;
 import cn.ae2bc.logic.DirectionLayout;
 import net.minecraft.ChatFormatting;
@@ -59,7 +59,7 @@ public abstract class PatternEncodingTermScreenMixin {
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Unique
     private void ae2bc$showSelector(PatternEncodingTermScreen<?> screen, int inputSlot) {
-        screen.switchToScreen(new SetInputDirectionScreen(screen, inputSlot, ae2bc$directionLayout));
+        screen.switchToScreen(new MaterialOutputConfigScreen(screen, inputSlot, ae2bc$directionLayout));
     }
 
     @ModifyArg(
@@ -74,7 +74,7 @@ public abstract class PatternEncodingTermScreenMixin {
             return original;
         }
         List<Component> tooltip = new ArrayList<>(original);
-        tooltip.add(Component.translatable("gui.ae2_batchcraft.input_direction")
+        tooltip.add(Component.translatable("gui.ae2_batchcraft.material_output_config")
                 .withStyle(ChatFormatting.DARK_GRAY));
         return tooltip;
     }
@@ -84,9 +84,9 @@ public abstract class PatternEncodingTermScreenMixin {
         PatternEncodingTermScreen<?> screen = (PatternEncodingTermScreen<?>) (Object) this;
         int inputSlot = ae2bc$findInputSlot(screen.getMenu(), slot);
         if (inputSlot < 0 || ((PatternEncodingTermMenuExtension) screen.getMenu())
-                .ae2bc$getMaterialInputConfig().getDirection(inputSlot) == null
+                .ae2bc$getMaterialOutputConfig().getDirection(inputSlot) == null
                 && ((PatternEncodingTermMenuExtension) screen.getMenu())
-                .ae2bc$getMaterialInputConfig().getOutputForm(inputSlot)
+                .ae2bc$getMaterialOutputConfig().getOutputForm(inputSlot)
                 == cn.ae2bc.pattern.MaterialOutputForm.NORMAL) {
             return;
         }

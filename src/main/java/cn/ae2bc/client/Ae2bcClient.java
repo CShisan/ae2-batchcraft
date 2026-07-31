@@ -5,7 +5,7 @@ import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.menu.PatternP2PTunnelInputMenu;
 import cn.ae2bc.menu.PatternP2PTunnelOutputMenu;
 import cn.ae2bc.menu.PatternP2PTunnelEnergyMenu;
-import cn.ae2bc.menu.P2PPlacerMenu;
+import cn.ae2bc.menu.ComponentPlacerMenu;
 import cn.ae2bc.menu.ProductExtractionMenu;
 import cn.ae2bc.menu.PatternP2PUnitManagerMenu;
 import net.neoforged.api.distmarker.Dist;
@@ -30,13 +30,13 @@ public final class Ae2bcClient {
     private static final String PLACER_SCREEN_STYLE = "/screens/ae2_batchcraft/component_placer.json";
     private static final String ENERGY_SCREEN_STYLE = "/screens/ae2_batchcraft/pattern_p2p_tunnel_energy.json";
     private static final String PRODUCT_EXTRACTION_SCREEN_STYLE = "/screens/ae2_batchcraft/product_extraction.json";
-    private static final String PATTERN_P2P_UNIT_MANAGER_SCREEN_STYLE = "/screens/ae2_batchcraft/pp2p_unit_manager.json";
+    private static final String PATTERN_P2P_UNIT_MANAGER_SCREEN_STYLE = "/screens/ae2_batchcraft/pattern_p2p_unit_manager.json";
 
     public Ae2bcClient(IEventBus modBus) {
         modBus.addListener(Ae2bcClient::registerScreens);
         modBus.addListener(Ae2bcClient::registerGeometryLoaders);
         modBus.addListener(Ae2bcClient::registerItemColors);
-        NeoForge.EVENT_BUS.addListener(P2PPlacerSelectionRenderer::render);
+        NeoForge.EVENT_BUS.addListener(ComponentPlacerSelectionRenderer::render);
     }
 
     private static void registerScreens(RegisterMenuScreensEvent event) {
@@ -52,9 +52,9 @@ public final class Ae2bcClient {
                 PatternP2PTunnelEnergyMenu.TYPE, (menu, inventory, title) ->
                         new PatternP2PTunnelEnergyScreen(menu, inventory, title,
                                 StyleManager.loadStyleDoc(ENERGY_SCREEN_STYLE)));
-        event.<P2PPlacerMenu, P2PPlacerScreen>register(
-                P2PPlacerMenu.TYPE, (menu, inventory, title) ->
-                        new P2PPlacerScreen(menu, inventory, title,
+        event.<ComponentPlacerMenu, ComponentPlacerScreen>register(
+                ComponentPlacerMenu.TYPE, (menu, inventory, title) ->
+                        new ComponentPlacerScreen(menu, inventory, title,
                                 StyleManager.loadStyleDoc(PLACER_SCREEN_STYLE)));
         event.<ProductExtractionMenu, ProductExtractionScreen>register(
                 ProductExtractionMenu.TYPE, (menu, inventory, title) ->
@@ -67,9 +67,9 @@ public final class Ae2bcClient {
     }
 
     private static void registerGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
-        event.register(ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "pp2p_unit_manager_frequency"),
+        event.register(ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "pattern_p2p_unit_manager_frequency"),
                 PatternP2PUnitManagerFrequencyGeometry.INSTANCE);
-        event.register(ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "pp2p_unit_port_identity"),
+        event.register(ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "pattern_p2p_unit_port_identity"),
                 PatternP2PUnitPortIdentityGeometry.INSTANCE);
     }
 

@@ -7,7 +7,7 @@ public final class PatternP2PUnitDimensions {
     public static final int INNER_MIN = 5;
     public static final int INNER_MAX = 11;
     public static final int ID_MIN = 7;
-    public static final float INDICATOR_DEPTH = 0.25f;
+    public static final float INDICATOR_DEPTH = 0.01f;
 
     private PatternP2PUnitDimensions() {
     }

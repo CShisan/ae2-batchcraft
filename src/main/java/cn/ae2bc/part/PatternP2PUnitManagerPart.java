@@ -55,13 +55,12 @@ import java.util.function.Predicate;
 
 /** Center cable that owns a unit task and connects to the AE network on all six sides. */
 public final class PatternP2PUnitManagerPart extends CablePart implements PatternTaskEndpoint {
-    // Keep AE2's P2P tag name so existing face-manager worlds retain their frequency.
-    private static final String FREQUENCY_TAG = "freq";
+    private static final String FREQUENCY_TAG = "PatternP2PFrequency";
     private static final String PATTERN_P2P_UNIT_ID_TAG = "PatternP2PUnitId";
     private static final IPartModel MODEL = new PartModel(
-            ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/p2p/pp2p_unit_manager"),
-            ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/pp2p_unit_manager_glass"),
-            ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/pp2p_unit_manager_frequency"));
+            ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/p2p/pattern_p2p_unit_manager"),
+            ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/pattern_p2p_unit_manager_glass"),
+            ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/pattern_p2p_unit_manager_frequency"));
 
     private final PatternP2PUnitManagerLogic logic = new PatternP2PUnitManagerLogic(getMainNode(), this);
     private final RemoteReturnInventory returnInventory = new RemoteReturnInventory(

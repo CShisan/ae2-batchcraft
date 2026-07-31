@@ -1,7 +1,7 @@
 package cn.ae2bc.registry;
 
 import cn.ae2bc.Ae2bcMod;
-import cn.ae2bc.menu.P2PPlacerMenu;
+import cn.ae2bc.menu.ComponentPlacerMenu;
 import cn.ae2bc.menu.PatternP2PTunnelEnergyMenu;
 import cn.ae2bc.menu.PatternP2PTunnelInputMenu;
 import cn.ae2bc.menu.PatternP2PTunnelOutputMenu;
@@ -28,13 +28,13 @@ public final class ModMenus {
     public static final DeferredHolder<MenuType<?>, MenuType<PatternP2PTunnelEnergyMenu>>
             PATTERN_P2P_TUNNEL_ENERGY = MENUS.register(
                     "pattern_p2p_tunnel_energy", () -> PatternP2PTunnelEnergyMenu.TYPE);
-    public static final DeferredHolder<MenuType<?>, MenuType<P2PPlacerMenu>>
+    public static final DeferredHolder<MenuType<?>, MenuType<ComponentPlacerMenu>>
             COMPONENT_PLACER = MENUS.register(
-                    ModContent.COMPONENT_PLACER_ID, () -> P2PPlacerMenu.TYPE);
+                    ModContent.COMPONENT_PLACER_ID, () -> ComponentPlacerMenu.TYPE);
     public static final DeferredHolder<MenuType<?>, MenuType<ProductExtractionMenu>>
             PRODUCT_EXTRACTION = MENUS.register("product_extraction", () -> ProductExtractionMenu.TYPE);
     public static final DeferredHolder<MenuType<?>, MenuType<PatternP2PUnitManagerMenu>>
-            PATTERN_P2P_UNIT_MANAGER = MENUS.register("pp2p_unit_manager", () -> PatternP2PUnitManagerMenu.TYPE);
+            PATTERN_P2P_UNIT_MANAGER = MENUS.register("pattern_p2p_unit_manager", () -> PatternP2PUnitManagerMenu.TYPE);
 
     private ModMenus() {
     }

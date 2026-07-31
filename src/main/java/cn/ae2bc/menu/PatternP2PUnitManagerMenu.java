@@ -28,7 +28,7 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
     public static final MenuType<PatternP2PUnitManagerMenu> TYPE = MenuTypeBuilder
             .create(PatternP2PUnitManagerMenu::new, PatternP2PUnitManagerPart.class)
             .withMenuTitle(part -> part.getPartItem().asItem().getDescription())
-            .buildUnregistered(ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "pp2p_unit_manager"));
+            .buildUnregistered(ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "pattern_p2p_unit_manager"));
 
     private final PatternP2PUnitManagerPart host;
     @GuiSync(0) public boolean syncMain = true;

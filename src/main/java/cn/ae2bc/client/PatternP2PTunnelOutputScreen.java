@@ -25,7 +25,7 @@ public final class PatternP2PTunnelOutputScreen extends AEBaseScreen<PatternP2PT
             String modeName = mode.getSerializedName();
             var button = widgets.addButton("return" + Character.toUpperCase(modeName.charAt(0))
                             + modeName.substring(1),
-                    Component.translatable("gui.ae2_batchcraft.pp2p_unit.return_mode." + modeName),
+                    Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.return_mode." + modeName),
                     () -> menu.setReturnMode(mode));
             button.setTooltip(Tooltip.create(Component.translatable(
                     "gui.ae2_batchcraft.return_mode." + modeName + ".tooltip")));
@@ -70,7 +70,7 @@ public final class PatternP2PTunnelOutputScreen extends AEBaseScreen<PatternP2PT
                 Component.translatable("gui.ae2_batchcraft.return_mode"),
                 offsetX, offsetY, imageWidth, 43, 74);
         DashedSectionRenderer.drawBackground(graphics, font,
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.section.task_reset"),
+                Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.section.task_reset"),
                 offsetX, offsetY, imageWidth, 85, 116);
     }
 
@@ -81,6 +81,6 @@ public final class PatternP2PTunnelOutputScreen extends AEBaseScreen<PatternP2PT
         DashedSectionRenderer.drawTitle(graphics, font,
                 Component.translatable("gui.ae2_batchcraft.return_mode"), 39);
         DashedSectionRenderer.drawTitle(graphics, font,
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.section.task_reset"), 81);
+                Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.section.task_reset"), 81);
     }
 }

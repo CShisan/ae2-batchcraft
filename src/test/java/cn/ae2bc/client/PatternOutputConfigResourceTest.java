@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PatternOutputConfigResourceTest {
     @Test
     void outputConfigurationScreenHasDynamicValueLabels() throws Exception {
-        String screen = readText("assets/ae2/screens/ae2_batchcraft/set_input_direction.json");
+        String screen = readText("assets/ae2/screens/ae2_batchcraft/material_output_config.json");
         assertTrue(screen.contains("\"output_direction\""));
         assertTrue(screen.contains("\"output_form\""));
 

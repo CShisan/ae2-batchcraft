@@ -4,8 +4,7 @@ import appeng.api.stacks.AEKey;
 import appeng.crafting.pattern.AEProcessingPattern;
 import appeng.parts.encoding.PatternEncodingLogic;
 import appeng.util.ConfigInventory;
-import cn.ae2bc.pattern.InputDirectionData;
-import cn.ae2bc.pattern.MaterialInputConfigData;
+import cn.ae2bc.pattern.MaterialOutputConfigData;
 import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.extension.PatternEncodingLogicExtension;
 import net.minecraft.core.HolderLookup;
@@ -25,15 +24,14 @@ import java.util.Objects;
 @Mixin(PatternEncodingLogic.class)
 public abstract class PatternEncodingLogicMixin implements PatternEncodingLogicExtension {
     @Unique
-    private static final String AE2BC_INPUT_DIRECTIONS_NBT = "InputDirections";
-    private static final String AE2BC_MATERIAL_INPUT_CONFIG_NBT = "MaterialInputConfig";
+    private static final String AE2BC_MATERIAL_OUTPUT_CONFIG_NBT = "MaterialOutputConfig";
 
     @Shadow
     @Final
     private ConfigInventory encodedInputInv;
 
     @Unique
-    private MaterialInputConfigData ae2bc$materialInputConfig = MaterialInputConfigData.EMPTY;
+    private MaterialOutputConfigData ae2bc$materialOutputConfig = MaterialOutputConfigData.EMPTY;
     @Unique
     private final AEKey[] ae2bc$inputKeys = new AEKey[AEProcessingPattern.MAX_INPUT_SLOTS];
 
@@ -43,8 +41,8 @@ public abstract class PatternEncodingLogicMixin implements PatternEncodingLogicE
     }
 
     @Inject(method = "onEncodedInputChanged", at = @At("TAIL"))
-    private void ae2bc$clearDirectionsForReplacedInputs(CallbackInfo ci) {
-        MaterialInputConfigData updated = ae2bc$materialInputConfig;
+    private void ae2bc$clearOutputConfigForReplacedInputs(CallbackInfo ci) {
+        MaterialOutputConfigData updated = ae2bc$materialOutputConfig;
         for (int slot = 0; slot < ae2bc$inputKeys.length; slot++) {
             AEKey current = encodedInputInv.getKey(slot);
             if (!Objects.equals(ae2bc$inputKeys[slot], current)) {
@@ -52,58 +50,48 @@ public abstract class PatternEncodingLogicMixin implements PatternEncodingLogicE
                 ae2bc$inputKeys[slot] = current;
             }
         }
-        ae2bc$materialInputConfig = updated;
+        ae2bc$materialOutputConfig = updated;
     }
 
     @Inject(method = "loadEncodedPattern", at = @At("HEAD"))
     private void ae2bc$resetBeforeLoadingPattern(ItemStack pattern, CallbackInfo ci) {
         if (!pattern.isEmpty()) {
-            ae2bc$materialInputConfig = MaterialInputConfigData.EMPTY;
+            ae2bc$materialOutputConfig = MaterialOutputConfigData.EMPTY;
         }
     }
 
     @Inject(method = "loadProcessingPattern", at = @At("TAIL"))
-    private void ae2bc$loadDirectionsFromPattern(AEProcessingPattern pattern, CallbackInfo ci) {
-        MaterialInputConfigData config = pattern.getDefinition().get(ModContent.MATERIAL_INPUT_CONFIG.get());
-        if (config == null) {
-            InputDirectionData directions = pattern.getDefinition().get(ModContent.INPUT_DIRECTIONS.get());
-            config = MaterialInputConfigData.fromLegacy(directions);
-        }
-        ae2bc$materialInputConfig = config;
+    private void ae2bc$loadMaterialOutputConfigFromPattern(AEProcessingPattern pattern, CallbackInfo ci) {
+        ae2bc$materialOutputConfig = Objects.requireNonNullElse(
+                pattern.getDefinition().get(ModContent.MATERIAL_OUTPUT_CONFIG.get()),
+                MaterialOutputConfigData.EMPTY);
         ae2bc$snapshotInputKeys();
     }
 
     @Inject(method = "readFromNBT", at = @At("TAIL"))
-    private void ae2bc$readDirections(CompoundTag data, HolderLookup.Provider registries, CallbackInfo ci) {
-        if (data.contains(AE2BC_MATERIAL_INPUT_CONFIG_NBT)) {
-            ae2bc$materialInputConfig = MaterialInputConfigData.fromPacked(
-                    data.getLongArray(AE2BC_MATERIAL_INPUT_CONFIG_NBT));
-        } else {
-            ae2bc$materialInputConfig = MaterialInputConfigData.fromLegacy(
-                    InputDirectionData.fromPacked(data.getLongArray(AE2BC_INPUT_DIRECTIONS_NBT)));
-        }
+    private void ae2bc$readMaterialOutputConfig(CompoundTag data, HolderLookup.Provider registries, CallbackInfo ci) {
+        ae2bc$materialOutputConfig = MaterialOutputConfigData.fromPacked(
+                data.getLongArray(AE2BC_MATERIAL_OUTPUT_CONFIG_NBT));
         ae2bc$snapshotInputKeys();
     }
 
     @Inject(method = "writeToNBT", at = @At("TAIL"))
-    private void ae2bc$writeDirections(CompoundTag data, HolderLookup.Provider registries, CallbackInfo ci) {
-        if (ae2bc$materialInputConfig.isEmpty()) {
-            data.remove(AE2BC_MATERIAL_INPUT_CONFIG_NBT);
-            data.remove(AE2BC_INPUT_DIRECTIONS_NBT);
+    private void ae2bc$writeMaterialOutputConfig(CompoundTag data, HolderLookup.Provider registries, CallbackInfo ci) {
+        if (ae2bc$materialOutputConfig.isEmpty()) {
+            data.remove(AE2BC_MATERIAL_OUTPUT_CONFIG_NBT);
         } else {
-            data.putLongArray(AE2BC_MATERIAL_INPUT_CONFIG_NBT, ae2bc$materialInputConfig.toPacked());
-            data.remove(AE2BC_INPUT_DIRECTIONS_NBT);
+            data.putLongArray(AE2BC_MATERIAL_OUTPUT_CONFIG_NBT, ae2bc$materialOutputConfig.toPacked());
         }
     }
 
     @Override
-    public MaterialInputConfigData ae2bc$getMaterialInputConfig() {
-        return ae2bc$materialInputConfig;
+    public MaterialOutputConfigData ae2bc$getMaterialOutputConfig() {
+        return ae2bc$materialOutputConfig;
     }
 
     @Override
-    public void ae2bc$setMaterialInputConfig(MaterialInputConfigData config) {
-        ae2bc$materialInputConfig = Objects.requireNonNullElse(config, MaterialInputConfigData.EMPTY);
+    public void ae2bc$setMaterialOutputConfig(MaterialOutputConfigData config) {
+        ae2bc$materialOutputConfig = Objects.requireNonNullElse(config, MaterialOutputConfigData.EMPTY);
         ((PatternEncodingLogic) (Object) this).saveChanges();
     }
 

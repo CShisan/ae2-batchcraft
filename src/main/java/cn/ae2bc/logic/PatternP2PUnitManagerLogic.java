@@ -109,14 +109,21 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
     }
 
     public void setEnergyDistributionMode(EnergyDistributionMode mode) {
-        if (mode != null && mode != energyDistributionMode) {
-            energyDistributionMode = mode;
-            changed();
+        if (applyEnergyDistributionMode(mode)) {
             var grid = mainNode.getGrid();
             if (grid != null) {
-                grid.getService(PatternP2PEnergyGridService.class).topologyChanged();
+                grid.getService(PatternP2PEnergyGridService.class).demandChanged();
             }
         }
+    }
+
+    boolean applyEnergyDistributionMode(EnergyDistributionMode mode) {
+        if (mode == null || mode == energyDistributionMode) {
+            return false;
+        }
+        energyDistributionMode = mode;
+        manager.getHost().markForSave();
+        return true;
     }
 
     public void setSyncMainConfiguration(boolean enabled) {
@@ -194,7 +201,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
                 if (available.get(input.what()) < input.amount()) {
                     return null;
                 }
-                MaterialOutputForm form = metadata.materialInputConfig().getOutputForm(slot);
+                MaterialOutputForm form = metadata.materialOutputConfig().getOutputForm(slot);
                 if (!form.supports(input.what())) {
                     return null;
                 }

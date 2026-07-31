@@ -9,31 +9,31 @@ item_ids:
 - ae2_batchcraft:pattern_p2p_tunnel_energy
 - ae2_batchcraft:component_placer
 - ae2_batchcraft:product_extraction_card
-- ae2_batchcraft:pp2p_unit_manager
-- ae2_batchcraft:white_pp2p_unit_manager
-- ae2_batchcraft:light_gray_pp2p_unit_manager
-- ae2_batchcraft:gray_pp2p_unit_manager
-- ae2_batchcraft:black_pp2p_unit_manager
-- ae2_batchcraft:lime_pp2p_unit_manager
-- ae2_batchcraft:yellow_pp2p_unit_manager
-- ae2_batchcraft:orange_pp2p_unit_manager
-- ae2_batchcraft:brown_pp2p_unit_manager
-- ae2_batchcraft:red_pp2p_unit_manager
-- ae2_batchcraft:pink_pp2p_unit_manager
-- ae2_batchcraft:magenta_pp2p_unit_manager
-- ae2_batchcraft:purple_pp2p_unit_manager
-- ae2_batchcraft:blue_pp2p_unit_manager
-- ae2_batchcraft:light_blue_pp2p_unit_manager
-- ae2_batchcraft:cyan_pp2p_unit_manager
-- ae2_batchcraft:green_pp2p_unit_manager
-- ae2_batchcraft:pp2p_unit_port_drop
-- ae2_batchcraft:pp2p_unit_port_pickup
-- ae2_batchcraft:pp2p_unit_port_place
-- ae2_batchcraft:pp2p_unit_port_break
-- ae2_batchcraft:pp2p_unit_port_transfer
-- ae2_batchcraft:pp2p_unit_port_return
-- ae2_batchcraft:pp2p_unit_port_redstone
-- ae2_batchcraft:pp2p_unit_port_energy
+- ae2_batchcraft:pattern_p2p_unit_manager
+- ae2_batchcraft:white_pattern_p2p_unit_manager
+- ae2_batchcraft:light_gray_pattern_p2p_unit_manager
+- ae2_batchcraft:gray_pattern_p2p_unit_manager
+- ae2_batchcraft:black_pattern_p2p_unit_manager
+- ae2_batchcraft:lime_pattern_p2p_unit_manager
+- ae2_batchcraft:yellow_pattern_p2p_unit_manager
+- ae2_batchcraft:orange_pattern_p2p_unit_manager
+- ae2_batchcraft:brown_pattern_p2p_unit_manager
+- ae2_batchcraft:red_pattern_p2p_unit_manager
+- ae2_batchcraft:pink_pattern_p2p_unit_manager
+- ae2_batchcraft:magenta_pattern_p2p_unit_manager
+- ae2_batchcraft:purple_pattern_p2p_unit_manager
+- ae2_batchcraft:blue_pattern_p2p_unit_manager
+- ae2_batchcraft:light_blue_pattern_p2p_unit_manager
+- ae2_batchcraft:cyan_pattern_p2p_unit_manager
+- ae2_batchcraft:green_pattern_p2p_unit_manager
+- ae2_batchcraft:pattern_p2p_unit_port_drop
+- ae2_batchcraft:pattern_p2p_unit_port_pickup
+- ae2_batchcraft:pattern_p2p_unit_port_place
+- ae2_batchcraft:pattern_p2p_unit_port_break
+- ae2_batchcraft:pattern_p2p_unit_port_transfer
+- ae2_batchcraft:pattern_p2p_unit_port_return
+- ae2_batchcraft:pattern_p2p_unit_port_redstone
+- ae2_batchcraft:pattern_p2p_unit_port_energy
 ---
 
 <Column gap="24">
@@ -192,11 +192,11 @@ item_ids:
 ## 样板 P2P 单元
 
 <Row gap="12">
-  <ItemImage id="ae2_batchcraft:pp2p_unit_manager" scale="3" />
-  <ItemImage id="ae2_batchcraft:pp2p_unit_port_transfer" scale="2" />
-  <ItemImage id="ae2_batchcraft:pp2p_unit_port_return" scale="2" />
-  <ItemImage id="ae2_batchcraft:pp2p_unit_port_redstone" scale="2" />
-  <ItemImage id="ae2_batchcraft:pp2p_unit_port_energy" scale="2" />
+  <ItemImage id="ae2_batchcraft:pattern_p2p_unit_manager" scale="3" />
+  <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_transfer" scale="2" />
+  <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_return" scale="2" />
+  <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_redstone" scale="2" />
+  <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_energy" scale="2" />
 </Row>
 
 一个单元由一个**管理器**和若干**功能端口**组成。管理器接收主端分配的完整加工任务，各端口只在这个任务进行期间执行材料传输、世界交互、产物返回、红石输出或供电。
@@ -275,27 +275,27 @@ item_ids:
 
 ### 单元物品配方
 
-<RecipeFor id="ae2_batchcraft:pp2p_unit_manager" />
+<RecipeFor id="ae2_batchcraft:pattern_p2p_unit_manager" />
 
 <Column gap="16">
   <Row gap="12">
-    <RecipeFor id="ae2_batchcraft:pp2p_unit_port_transfer" />
-    <RecipeFor id="ae2_batchcraft:pp2p_unit_port_return" />
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_transfer" />
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_return" />
   </Row>
 
   <Row gap="12">
-    <RecipeFor id="ae2_batchcraft:pp2p_unit_port_drop" />
-    <RecipeFor id="ae2_batchcraft:pp2p_unit_port_pickup" />
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_drop" />
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_pickup" />
   </Row>
 
   <Row gap="12">
-    <RecipeFor id="ae2_batchcraft:pp2p_unit_port_place" />
-    <RecipeFor id="ae2_batchcraft:pp2p_unit_port_break" />
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_place" />
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_break" />
   </Row>
 
   <Row gap="12">
-    <RecipeFor id="ae2_batchcraft:pp2p_unit_port_redstone" />
-    <RecipeFor id="ae2_batchcraft:pp2p_unit_port_energy" />
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_redstone" />
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_energy" />
   </Row>
 </Column>
 

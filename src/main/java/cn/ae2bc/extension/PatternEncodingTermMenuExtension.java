@@ -1,11 +1,11 @@
 package cn.ae2bc.extension;
 
-import cn.ae2bc.pattern.MaterialInputConfigData;
+import cn.ae2bc.pattern.MaterialOutputConfigData;
 import cn.ae2bc.pattern.MaterialOutputForm;
 import net.minecraft.core.Direction;
 
 public interface PatternEncodingTermMenuExtension {
-    MaterialInputConfigData ae2bc$getMaterialInputConfig();
+    MaterialOutputConfigData ae2bc$getMaterialOutputConfig();
 
     void ae2bc$setInputDirection(int slot, Direction direction);
 

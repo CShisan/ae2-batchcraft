@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PatternP2PUnitScreenResourceTest {
     private static final String MANAGER_SCREEN =
-            "assets/ae2/screens/ae2_batchcraft/pp2p_unit_manager.json";
+            "assets/ae2/screens/ae2_batchcraft/pattern_p2p_unit_manager.json";
     private static final String INPUT_SCREEN =
             "assets/ae2/screens/ae2_batchcraft/pattern_p2p_tunnel_input.json";
     private static final String OUTPUT_SCREEN =

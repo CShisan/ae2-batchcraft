@@ -69,7 +69,7 @@ abstract class PatternP2PUnitPagedScreen<T extends AEBaseMenu> extends AEBaseScr
         super.updateBeforeRender();
         pageButton.setMessage(pageButtonMessage());
         setTextContent("page_title", Component.translatable(
-                "gui.ae2_batchcraft.pp2p_unit.page." + page.serializedName));
+                "gui.ae2_batchcraft.pattern_p2p_unit.page." + page.serializedName));
     }
 
     protected final boolean isPage(Page candidate) {
@@ -100,7 +100,7 @@ abstract class PatternP2PUnitPagedScreen<T extends AEBaseMenu> extends AEBaseScr
             case BREAK -> Page.REDSTONE;
             case REDSTONE -> Page.COMMON;
         };
-        return Component.translatable("gui.ae2_batchcraft.pp2p_unit.page.switch",
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.page." + nextPage.serializedName));
+        return Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.page.switch",
+                Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.page." + nextPage.serializedName));
     }
 }

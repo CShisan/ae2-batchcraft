@@ -221,7 +221,7 @@ public final class PatternP2PTunnelOutputLogic {
             return false;
         }
         List<RoutedInput> selected = metadata.hasExplicitDirections()
-                ? reconstructProcessingInputs((AEProcessingPattern) pattern, inputs, metadata.inputDirections())
+                ? reconstructProcessingInputs((AEProcessingPattern) pattern, inputs, metadata.outputDirections())
                 : null;
         if (selected == null) {
             selected = collectAutomaticInputs(pattern, inputs);

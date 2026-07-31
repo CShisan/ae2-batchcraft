@@ -49,7 +49,7 @@ public final class PatternP2PTunnelEnergyScreen extends AEBaseScreen<PatternP2PT
                 Component.translatable("gui.ae2_batchcraft.energy.section.input"),
                 intervalText(), offsetX, offsetY, imageWidth, 28, 59);
         DashedSectionRenderer.drawBackground(graphics, font,
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.section.energy_configuration"),
+                Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.section.energy_configuration"),
                 offsetX, offsetY, imageWidth, 70, 101);
     }
 
@@ -62,7 +62,7 @@ public final class PatternP2PTunnelEnergyScreen extends AEBaseScreen<PatternP2PT
                 Component.translatable("gui.ae2_batchcraft.energy.section.input"),
                 intervalText(), 24, imageWidth);
         DashedSectionRenderer.drawTitle(graphics, font,
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.section.energy_configuration"), 66);
+                Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.section.energy_configuration"), 66);
     }
 
     private Component intervalText() {

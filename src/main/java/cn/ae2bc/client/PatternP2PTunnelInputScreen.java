@@ -29,17 +29,17 @@ public final class PatternP2PTunnelInputScreen extends PatternP2PUnitPagedScreen
                                          Component title, ScreenStyle style) {
         super(menu, playerInventory, title, style);
         strictButton = widgets.addButton("returnStrict",
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.return_mode.strict"),
+                Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.return_mode.strict"),
                 () -> menu.setReturnMode(ReturnMode.STRICT));
         strictButton.setTooltip(Tooltip.create(Component.translatable(
                 "gui.ae2_batchcraft.return_mode.strict.tooltip")));
         unblockedButton = widgets.addButton("returnUnblocked",
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.return_mode.unblocked"),
+                Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.return_mode.unblocked"),
                 () -> menu.setReturnMode(ReturnMode.UNBLOCKED));
         unblockedButton.setTooltip(Tooltip.create(Component.translatable(
                 "gui.ae2_batchcraft.return_mode.unblocked.tooltip")));
         breakRecovery = new VerticallyAlignedCheckbox(style,
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.break_recovery"));
+                Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.break_recovery"));
         widgets.add("breakRecovery", breakRecovery);
         PatternP2PUnitConfigScreenSupport.applyBreakPortTooltip(breakRecovery);
         breakRecovery.setChangeListener(() -> menu.setBreakRecovery(breakRecovery.isSelected()));
@@ -62,15 +62,15 @@ public final class PatternP2PTunnelInputScreen extends PatternP2PUnitPagedScreen
         breakRecovery.setY(topPos + 52);
         strengthInput = addRenderableWidget(new ValidatedIntegerField(font,
                 leftPos + 112, topPos + 92, 36, 16,
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.redstone_strength"),
+                Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.redstone_strength"),
                 () -> 0, () -> 15, menu::setRedstoneStrength));
         pulseTimeInput = addRenderableWidget(new ValidatedIntegerField(font,
                 leftPos + 112, topPos + 113, 36, 16,
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.pulse_width"),
+                Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.pulse_width"),
                 () -> 1, () -> menu.pulsePeriod, menu::setPulseWidth));
         pulsePeriodInput = addRenderableWidget(new ValidatedIntegerField(font,
                 leftPos + 112, topPos + 134, 36, 16,
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.pulse_period"),
+                Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.pulse_period"),
                 () -> 1, () -> PatternP2PUnitConfiguration.MAX_PULSE_TICKS, menu::setPulsePeriod));
         PatternP2PUnitConfigScreenSupport.applyRedstonePortTooltips(redstoneModeButtons.values(),
                 strengthInput, pulseTimeInput, pulsePeriodInput);
@@ -135,18 +135,18 @@ public final class PatternP2PTunnelInputScreen extends PatternP2PUnitPagedScreen
                     Component.translatable("gui.ae2_batchcraft.return_mode"),
                     offsetX, offsetY, imageWidth, 43, 74);
             DashedSectionRenderer.drawBackground(graphics, font,
-                    Component.translatable("gui.ae2_batchcraft.pp2p_unit.section.task_reset"),
+                    Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.section.task_reset"),
                     offsetX, offsetY, imageWidth, 85, 116);
         } else if (isPage(Page.BREAK)) {
             DashedSectionRenderer.drawBackground(graphics, font,
-                    Component.translatable("gui.ae2_batchcraft.pp2p_unit.section.drop_handling"),
+                    Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.section.drop_handling"),
                     offsetX, offsetY, imageWidth, 43, 74);
         } else {
             DashedSectionRenderer.drawBackground(graphics, font,
-                    Component.translatable("gui.ae2_batchcraft.pp2p_unit.redstone_mode"),
+                    Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.redstone_mode"),
                     offsetX, offsetY, imageWidth, 43, 74);
             DashedSectionRenderer.drawBackground(graphics, font,
-                    Component.translatable("gui.ae2_batchcraft.pp2p_unit.section.signal_parameters"),
+                    Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.section.signal_parameters"),
                     offsetX, offsetY, imageWidth, 85, 158);
         }
     }
@@ -158,21 +158,21 @@ public final class PatternP2PTunnelInputScreen extends PatternP2PUnitPagedScreen
             DashedSectionRenderer.drawTitle(graphics, font,
                     Component.translatable("gui.ae2_batchcraft.return_mode"), 39);
             DashedSectionRenderer.drawTitle(graphics, font,
-                    Component.translatable("gui.ae2_batchcraft.pp2p_unit.section.task_reset"), 81);
+                    Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.section.task_reset"), 81);
         } else if (isPage(Page.BREAK)) {
             DashedSectionRenderer.drawTitle(graphics, font,
-                    Component.translatable("gui.ae2_batchcraft.pp2p_unit.section.drop_handling"), 39);
+                    Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.section.drop_handling"), 39);
         } else {
             DashedSectionRenderer.drawTitle(graphics, font,
-                    Component.translatable("gui.ae2_batchcraft.pp2p_unit.redstone_mode"), 39);
+                    Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.redstone_mode"), 39);
             DashedSectionRenderer.drawTitle(graphics, font,
-                    Component.translatable("gui.ae2_batchcraft.pp2p_unit.section.signal_parameters"), 81);
+                    Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.section.signal_parameters"), 81);
         }
     }
 
     private void addRedstoneModeButton(String widgetId, RedstoneOutputMode mode) {
         var button = widgets.addButton(widgetId, Component.translatable(
-                "gui.ae2_batchcraft.pp2p_unit.redstone_mode." + mode.getSerializedName()),
+                "gui.ae2_batchcraft.pattern_p2p_unit.redstone_mode." + mode.getSerializedName()),
                 () -> menu.setRedstoneMode(mode));
         redstoneModeButtons.put(mode, button);
     }

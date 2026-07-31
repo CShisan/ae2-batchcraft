@@ -6,7 +6,7 @@ import appeng.api.stacks.GenericStack;
 import appeng.crafting.pattern.AEProcessingPattern;
 import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.pattern.InputDirectionData;
-import cn.ae2bc.pattern.MaterialInputConfigData;
+import cn.ae2bc.pattern.MaterialOutputConfigData;
 import cn.ae2bc.registry.ModContent;
 
 import java.util.Collections;
@@ -15,18 +15,18 @@ import java.util.Map;
 
 public final class PatternDispatchMetadata {
     private static final PatternDispatchMetadata INVALID = new PatternDispatchMetadata(
-            Map.of(), null, MaterialInputConfigData.EMPTY, false);
+            Map.of(), null, MaterialOutputConfigData.EMPTY, false);
 
     private final Map<AEKey, Long> declaredOutputs;
     private final GenericStack primaryOutput;
-    private final MaterialInputConfigData materialInputConfig;
+    private final MaterialOutputConfigData materialOutputConfig;
     private final boolean explicitDirections;
 
     private PatternDispatchMetadata(Map<AEKey, Long> declaredOutputs, GenericStack primaryOutput,
-                                    MaterialInputConfigData materialInputConfig, boolean explicitDirections) {
+                                    MaterialOutputConfigData materialOutputConfig, boolean explicitDirections) {
         this.declaredOutputs = declaredOutputs;
         this.primaryOutput = primaryOutput;
-        this.materialInputConfig = materialInputConfig;
+        this.materialOutputConfig = materialOutputConfig;
         this.explicitDirections = explicitDirections;
     }
 
@@ -45,7 +45,7 @@ public final class PatternDispatchMetadata {
                 return INVALID;
             }
 
-            MaterialInputConfigData config = getMaterialInputConfig(pattern);
+            MaterialOutputConfigData config = getMaterialOutputConfig(pattern);
             return new PatternDispatchMetadata(
                     Collections.unmodifiableMap(outputs), primary, config,
                     hasExplicitDirections(pattern, config.directions()));
@@ -55,16 +55,12 @@ public final class PatternDispatchMetadata {
         }
     }
 
-    private static MaterialInputConfigData getMaterialInputConfig(IPatternDetails pattern) {
+    private static MaterialOutputConfigData getMaterialOutputConfig(IPatternDetails pattern) {
         if (!(pattern instanceof AEProcessingPattern processingPattern)) {
-            return MaterialInputConfigData.EMPTY;
+            return MaterialOutputConfigData.EMPTY;
         }
-        MaterialInputConfigData config = processingPattern.getDefinition().get(ModContent.MATERIAL_INPUT_CONFIG.get());
-        if (config != null) {
-            return config;
-        }
-        InputDirectionData directions = processingPattern.getDefinition().get(ModContent.INPUT_DIRECTIONS.get());
-        return MaterialInputConfigData.fromLegacy(directions);
+        MaterialOutputConfigData config = processingPattern.getDefinition().get(ModContent.MATERIAL_OUTPUT_CONFIG.get());
+        return config == null ? MaterialOutputConfigData.EMPTY : config;
     }
 
     private static boolean hasExplicitDirections(IPatternDetails pattern, InputDirectionData directions) {
@@ -95,12 +91,12 @@ public final class PatternDispatchMetadata {
         return primaryOutput;
     }
 
-    public InputDirectionData inputDirections() {
-        return materialInputConfig.directions();
+    public InputDirectionData outputDirections() {
+        return materialOutputConfig.directions();
     }
 
-    public MaterialInputConfigData materialInputConfig() {
-        return materialInputConfig;
+    public MaterialOutputConfigData materialOutputConfig() {
+        return materialOutputConfig;
     }
 
     public boolean hasExplicitDirections() {

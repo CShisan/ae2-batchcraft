@@ -59,8 +59,11 @@ public final class PatternP2PEnergyGridService implements IGridService, IGridSer
         }
         if (owner instanceof PatternP2PUnitManagerPart manager) {
             managers.put(manager.getPatternP2PUnitId(), manager);
-            initializeOrApplyGlobalMode(manager);
+            boolean modeChanged = initializeOrApplyGlobalMode(manager);
             invalidateSnapshot();
+            if (modeChanged) {
+                demandChanged();
+            }
         }
 
         if (!(owner instanceof PatternP2PTunnelPart output && output.isStandardOutput())
@@ -181,7 +184,8 @@ public final class PatternP2PEnergyGridService implements IGridService, IGridSer
     }
 
     public void setGlobalEnergyDistributionMode(EnergyDistributionMode mode) {
-        if (mode == null) {
+        if (mode == null || (globalEnergyDistributionModeInitialized
+                && mode == globalEnergyDistributionMode)) {
             return;
         }
         globalEnergyDistributionMode = mode;
@@ -192,7 +196,7 @@ public final class PatternP2PEnergyGridService implements IGridService, IGridSer
             }
         }
         for (var manager : managers.values()) {
-            manager.getLogic().setEnergyDistributionMode(mode);
+            manager.getLogic().applyEnergyDistributionMode(mode);
         }
         demandChanged();
     }
@@ -206,12 +210,13 @@ public final class PatternP2PEnergyGridService implements IGridService, IGridSer
         }
     }
 
-    private void initializeOrApplyGlobalMode(PatternP2PUnitManagerPart manager) {
+    private boolean initializeOrApplyGlobalMode(PatternP2PUnitManagerPart manager) {
         if (!globalEnergyDistributionModeInitialized) {
             globalEnergyDistributionMode = manager.getLogic().getEnergyDistributionMode();
             globalEnergyDistributionModeInitialized = true;
+            return false;
         } else {
-            manager.getLogic().setEnergyDistributionMode(globalEnergyDistributionMode);
+            return manager.getLogic().applyEnergyDistributionMode(globalEnergyDistributionMode);
         }
     }
 

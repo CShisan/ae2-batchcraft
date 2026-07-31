@@ -27,7 +27,7 @@ import appeng.parts.p2p.P2PTunnelPart;
 import appeng.util.InteractionUtil;
 import appeng.util.SettingsFrom;
 import cn.ae2bc.Ae2bcMod;
-import cn.ae2bc.item.WirelessComponentPlacerItem;
+import cn.ae2bc.item.ComponentPlacerItem;
 import cn.ae2bc.logic.PatternP2PTunnelInputLogic;
 import cn.ae2bc.logic.PatternP2PTunnelOutputLogic;
 import cn.ae2bc.logic.PatternP2PEnergyGridService;
@@ -440,7 +440,7 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
 
     @Override
     public boolean onUseItemOn(ItemStack heldItem, Player player, InteractionHand hand, Vec3 pos) {
-        if (heldItem.getItem() instanceof WirelessComponentPlacerItem) {
+        if (heldItem.getItem() instanceof ComponentPlacerItem) {
             return true;
         }
         if (hand == InteractionHand.MAIN_HAND && heldItem.isEmpty()) {

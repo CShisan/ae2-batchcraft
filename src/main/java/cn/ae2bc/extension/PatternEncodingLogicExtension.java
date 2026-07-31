@@ -1,9 +1,9 @@
 package cn.ae2bc.extension;
 
-import cn.ae2bc.pattern.MaterialInputConfigData;
+import cn.ae2bc.pattern.MaterialOutputConfigData;
 
 public interface PatternEncodingLogicExtension {
-    MaterialInputConfigData ae2bc$getMaterialInputConfig();
+    MaterialOutputConfigData ae2bc$getMaterialOutputConfig();
 
-    void ae2bc$setMaterialInputConfig(MaterialInputConfigData config);
+    void ae2bc$setMaterialOutputConfig(MaterialOutputConfigData config);
 }

@@ -1,1 +1,0 @@
-{"type":"minecraft:crafting_shapeless","category":"redstone","ingredients":[{"item":"ae2:export_bus"},{"item":"ae2:logic_processor"}],"result":{"id":"ae2_batchcraft:pp2p_unit_port_transfer","count":1}}

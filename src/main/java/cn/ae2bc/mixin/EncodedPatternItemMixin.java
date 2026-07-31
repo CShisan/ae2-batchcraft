@@ -4,7 +4,7 @@ import appeng.crafting.pattern.AEProcessingPattern;
 import appeng.crafting.pattern.EncodedPatternItem;
 import cn.ae2bc.client.DirectionText;
 import cn.ae2bc.pattern.InputDirectionData;
-import cn.ae2bc.pattern.MaterialInputConfigData;
+import cn.ae2bc.pattern.MaterialOutputConfigData;
 import cn.ae2bc.pattern.MaterialOutputForm;
 import cn.ae2bc.registry.ModContent;
 import net.minecraft.ChatFormatting;
@@ -27,11 +27,8 @@ public abstract class EncodedPatternItemMixin {
     private void ae2bc$appendMaterialOutputConfig(ItemStack stack, Item.TooltipContext context,
                                                    List<Component> lines, TooltipFlag flags,
                                                    CallbackInfo ci) {
-        MaterialInputConfigData config = stack.get(ModContent.MATERIAL_INPUT_CONFIG.get());
-        if (config == null) {
-            config = MaterialInputConfigData.fromLegacy(stack.get(ModContent.INPUT_DIRECTIONS.get()));
-        }
-        if (config.isEmpty() || Minecraft.getInstance().level == null) {
+        MaterialOutputConfigData config = stack.get(ModContent.MATERIAL_OUTPUT_CONFIG.get());
+        if (config == null || config.isEmpty() || Minecraft.getInstance().level == null) {
             return;
         }
 

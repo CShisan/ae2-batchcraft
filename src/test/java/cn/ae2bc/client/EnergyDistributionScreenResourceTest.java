@@ -11,7 +11,7 @@ class EnergyDistributionScreenResourceTest {
     void energyTunnelAndUnitManagerExposeGlobalEnergyDistributionMode() throws Exception {
         String energy = resource("assets/ae2/screens/ae2_batchcraft/pattern_p2p_tunnel_energy.json");
         String output = resource("assets/ae2/screens/ae2_batchcraft/pattern_p2p_tunnel_output.json");
-        String unit = resource("assets/ae2/screens/ae2_batchcraft/pp2p_unit_manager.json");
+        String unit = resource("assets/ae2/screens/ae2_batchcraft/pattern_p2p_unit_manager.json");
 
         assertTrue(energy.contains("\"energyDistributionMode\""));
         assertTrue(energy.contains("\"top\": 77"));
@@ -21,7 +21,7 @@ class EnergyDistributionScreenResourceTest {
 
     @Test
     void unitManagerCommonSettingsHaveVisibleVerticalSpacing() throws Exception {
-        String unit = resource("assets/ae2/screens/ae2_batchcraft/pp2p_unit_manager.json");
+        String unit = resource("assets/ae2/screens/ae2_batchcraft/pattern_p2p_unit_manager.json");
 
         assertTrue(unit.contains("\"syncMain\": {\"left\": 106, \"top\": 21"));
         assertTrue(unit.contains("\"returnStrict\": {\"left\": 12, \"top\": 50"));
@@ -50,7 +50,7 @@ class EnergyDistributionScreenResourceTest {
     @Test
     void breakRecoveryCheckboxesUseCompactLabelFirstLayout() throws Exception {
         String input = resource("assets/ae2/screens/ae2_batchcraft/pattern_p2p_tunnel_input.json");
-        String unit = resource("assets/ae2/screens/ae2_batchcraft/pp2p_unit_manager.json");
+        String unit = resource("assets/ae2/screens/ae2_batchcraft/pattern_p2p_unit_manager.json");
 
         assertTrue(input.contains("\"breakRecovery\": {\"left\": 12, \"top\": 52"));
         assertTrue(unit.contains("\"breakRecovery\": {\"left\": 12, \"top\": 52"));
@@ -61,7 +61,7 @@ class EnergyDistributionScreenResourceTest {
     @Test
     void redstonePagesUseSegmentedModesAndAlignedSignalFields() throws Exception {
         String input = resource("assets/ae2/screens/ae2_batchcraft/pattern_p2p_tunnel_input.json");
-        String unit = resource("assets/ae2/screens/ae2_batchcraft/pp2p_unit_manager.json");
+        String unit = resource("assets/ae2/screens/ae2_batchcraft/pattern_p2p_unit_manager.json");
 
         for (String screen : new String[]{input, unit}) {
             assertTrue(screen.contains("\"redstoneSingle\": {\"left\": 12, \"top\": 50"));
@@ -81,7 +81,7 @@ class EnergyDistributionScreenResourceTest {
         assertTrue(chinese.contains("传电方式"));
         assertTrue(chinese.contains("均分"));
         assertTrue(chinese.contains("轮询"));
-        assertTrue(chinese.contains("间隔：%s tick"));
+        assertTrue(chinese.contains("间隔：%s 刻"));
         assertTrue(chinese.contains("重置可能销毁未下发材料,请确保材料已完整输出"));
         assertTrue(chinese.contains("能量配置"));
         assertTrue(chinese.contains("任务重置"));

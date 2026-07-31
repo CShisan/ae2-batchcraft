@@ -6,7 +6,7 @@ import appeng.parts.encoding.EncodingMode;
 import appeng.parts.encoding.PatternEncodingLogic;
 import appeng.api.stacks.GenericStack;
 import cn.ae2bc.pattern.InputDirectionData;
-import cn.ae2bc.pattern.MaterialInputConfigData;
+import cn.ae2bc.pattern.MaterialOutputConfigData;
 import cn.ae2bc.pattern.MaterialOutputForm;
 import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.extension.PatternEncodingLogicExtension;
@@ -26,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(PatternEncodingTermMenu.class)
 public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTermMenuExtension {
     @Unique
-    private static final String AE2BC_SET_MATERIAL_INPUT_CONFIG = "ae2bcSetMaterialInputConfig";
+    private static final String AE2BC_SET_MATERIAL_OUTPUT_CONFIG = "ae2bcSetMaterialOutputConfig";
 
     @Shadow
     @Final
@@ -34,16 +34,16 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
 
     @Unique
     @GuiSync(80)
-    private long ae2bc$inputDirections0;
+    private long ae2bc$outputDirections0;
     @Unique
     @GuiSync(81)
-    private long ae2bc$inputDirections1;
+    private long ae2bc$outputDirections1;
     @Unique
     @GuiSync(82)
-    private long ae2bc$inputDirections2;
+    private long ae2bc$outputDirections2;
     @Unique
     @GuiSync(83)
-    private long ae2bc$inputDirections3;
+    private long ae2bc$outputDirections3;
     @Unique
     @GuiSync(84)
     private long ae2bc$outputForms0;
@@ -54,15 +54,15 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
     @GuiSync(86)
     private long ae2bc$outputForms2;
     @Unique
-    private MaterialInputConfigData ae2bc$cachedMaterialInputConfig = MaterialInputConfigData.EMPTY;
+    private MaterialOutputConfigData ae2bc$cachedMaterialOutputConfig = MaterialOutputConfigData.EMPTY;
     @Unique
-    private long ae2bc$cachedInputDirections0;
+    private long ae2bc$cachedOutputDirections0;
     @Unique
-    private long ae2bc$cachedInputDirections1;
+    private long ae2bc$cachedOutputDirections1;
     @Unique
-    private long ae2bc$cachedInputDirections2;
+    private long ae2bc$cachedOutputDirections2;
     @Unique
-    private long ae2bc$cachedInputDirections3;
+    private long ae2bc$cachedOutputDirections3;
     @Unique
     private long ae2bc$cachedOutputForms0;
     @Unique
@@ -75,51 +75,49 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
             at = @At("RETURN"))
     private void ae2bc$registerDirectionAction(CallbackInfo ci) {
         ((AEBaseMenuInvoker) this).ae2bc$registerClientAction(
-                AE2BC_SET_MATERIAL_INPUT_CONFIG, int[].class, this::ae2bc$handleSetMaterialInputConfig);
+                AE2BC_SET_MATERIAL_OUTPUT_CONFIG, int[].class, this::ae2bc$handleSetMaterialOutputConfig);
     }
 
     @Inject(method = "broadcastChanges", at = @At("TAIL"))
-    private void ae2bc$syncDirections(CallbackInfo ci) {
+    private void ae2bc$syncMaterialOutputConfig(CallbackInfo ci) {
         PatternEncodingTermMenu menu = (PatternEncodingTermMenu) (Object) this;
         if (!menu.isClientSide()) {
-            ae2bc$setSyncedConfig(((PatternEncodingLogicExtension) encodingLogic).ae2bc$getMaterialInputConfig());
+            ae2bc$setSyncedConfig(((PatternEncodingLogicExtension) encodingLogic).ae2bc$getMaterialOutputConfig());
         }
     }
 
     @Inject(method = "encodeProcessingPattern", at = @At("RETURN"))
-    private void ae2bc$writeDirectionsToPattern(CallbackInfoReturnable<ItemStack> cir) {
+    private void ae2bc$writeMaterialOutputConfigToPattern(CallbackInfoReturnable<ItemStack> cir) {
         ItemStack pattern = cir.getReturnValue();
         if (pattern == null || pattern.isEmpty()) {
             return;
         }
-        MaterialInputConfigData config =
-                ((PatternEncodingLogicExtension) encodingLogic).ae2bc$getMaterialInputConfig();
+        MaterialOutputConfigData config =
+                ((PatternEncodingLogicExtension) encodingLogic).ae2bc$getMaterialOutputConfig();
         if (config.isEmpty()) {
-            pattern.remove(ModContent.MATERIAL_INPUT_CONFIG.get());
-            pattern.remove(ModContent.INPUT_DIRECTIONS.get());
+            pattern.remove(ModContent.MATERIAL_OUTPUT_CONFIG.get());
         } else {
-            pattern.set(ModContent.MATERIAL_INPUT_CONFIG.get(), config);
-            pattern.remove(ModContent.INPUT_DIRECTIONS.get());
+            pattern.set(ModContent.MATERIAL_OUTPUT_CONFIG.get(), config);
         }
     }
 
     @Override
-    public MaterialInputConfigData ae2bc$getMaterialInputConfig() {
-        if (ae2bc$cachedInputDirections0 != ae2bc$inputDirections0
-                || ae2bc$cachedInputDirections1 != ae2bc$inputDirections1
-                || ae2bc$cachedInputDirections2 != ae2bc$inputDirections2
-                || ae2bc$cachedInputDirections3 != ae2bc$inputDirections3
+    public MaterialOutputConfigData ae2bc$getMaterialOutputConfig() {
+        if (ae2bc$cachedOutputDirections0 != ae2bc$outputDirections0
+                || ae2bc$cachedOutputDirections1 != ae2bc$outputDirections1
+                || ae2bc$cachedOutputDirections2 != ae2bc$outputDirections2
+                || ae2bc$cachedOutputDirections3 != ae2bc$outputDirections3
                 || ae2bc$cachedOutputForms0 != ae2bc$outputForms0
                 || ae2bc$cachedOutputForms1 != ae2bc$outputForms1
                 || ae2bc$cachedOutputForms2 != ae2bc$outputForms2) {
-            ae2bc$cachedMaterialInputConfig = MaterialInputConfigData.fromPacked(new long[]{
-                    ae2bc$inputDirections0, ae2bc$inputDirections1,
-                    ae2bc$inputDirections2, ae2bc$inputDirections3,
+            ae2bc$cachedMaterialOutputConfig = MaterialOutputConfigData.fromPacked(new long[]{
+                    ae2bc$outputDirections0, ae2bc$outputDirections1,
+                    ae2bc$outputDirections2, ae2bc$outputDirections3,
                     ae2bc$outputForms0, ae2bc$outputForms1, ae2bc$outputForms2
             });
             ae2bc$cacheSyncedWords();
         }
-        return ae2bc$cachedMaterialInputConfig;
+        return ae2bc$cachedMaterialOutputConfig;
     }
 
     @Override
@@ -128,10 +126,10 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
         if (!InputDirectionData.isValidSlot(slot) || menu.getMode() != EncodingMode.PROCESSING) {
             return;
         }
-        MaterialInputConfigData updated = ae2bc$getMaterialInputConfig().withDirection(slot, direction);
+        MaterialOutputConfigData updated = ae2bc$getMaterialOutputConfig().withDirection(slot, direction);
         ae2bc$setSyncedConfig(updated);
         ((AEBaseMenuInvoker) this).ae2bc$sendClientAction(
-                AE2BC_SET_MATERIAL_INPUT_CONFIG,
+                AE2BC_SET_MATERIAL_OUTPUT_CONFIG,
                 new int[]{slot, direction == null ? 0 : direction.ordinal() + 1,
                         updated.getOutputForm(slot).getId()});
     }
@@ -148,16 +146,16 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
         if (input == null || !form.supports(input.what())) {
             return;
         }
-        MaterialInputConfigData updated = ae2bc$getMaterialInputConfig().withOutputForm(slot, form);
+        MaterialOutputConfigData updated = ae2bc$getMaterialOutputConfig().withOutputForm(slot, form);
         ae2bc$setSyncedConfig(updated);
         Direction direction = updated.getDirection(slot);
         ((AEBaseMenuInvoker) this).ae2bc$sendClientAction(
-                AE2BC_SET_MATERIAL_INPUT_CONFIG,
+                AE2BC_SET_MATERIAL_OUTPUT_CONFIG,
                 new int[]{slot, direction == null ? 0 : direction.ordinal() + 1, form.getId()});
     }
 
     @Unique
-    private void ae2bc$handleSetMaterialInputConfig(int[] action) {
+    private void ae2bc$handleSetMaterialOutputConfig(int[] action) {
         PatternEncodingTermMenu menu = (PatternEncodingTermMenu) (Object) this;
         Slot[] inputSlots = menu.getProcessingInputSlots();
         if (menu.isClientSide() || action == null || action.length != 3
@@ -172,34 +170,34 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
         if (input == null || !form.supports(input.what())) {
             return;
         }
-        MaterialInputConfigData current =
-                ((PatternEncodingLogicExtension) encodingLogic).ae2bc$getMaterialInputConfig();
+        MaterialOutputConfigData current =
+                ((PatternEncodingLogicExtension) encodingLogic).ae2bc$getMaterialOutputConfig();
         Direction direction = action[1] >= 1 && action[1] <= Direction.values().length
                 ? Direction.values()[action[1] - 1] : null;
-        ((PatternEncodingLogicExtension) encodingLogic).ae2bc$setMaterialInputConfig(
+        ((PatternEncodingLogicExtension) encodingLogic).ae2bc$setMaterialOutputConfig(
                 current.withDirection(action[0], direction).withOutputForm(action[0], form));
     }
 
     @Unique
-    private void ae2bc$setSyncedConfig(MaterialInputConfigData config) {
+    private void ae2bc$setSyncedConfig(MaterialOutputConfigData config) {
         long[] words = config.toPacked();
-        ae2bc$inputDirections0 = words[0];
-        ae2bc$inputDirections1 = words[1];
-        ae2bc$inputDirections2 = words[2];
-        ae2bc$inputDirections3 = words[3];
+        ae2bc$outputDirections0 = words[0];
+        ae2bc$outputDirections1 = words[1];
+        ae2bc$outputDirections2 = words[2];
+        ae2bc$outputDirections3 = words[3];
         ae2bc$outputForms0 = words[4];
         ae2bc$outputForms1 = words[5];
         ae2bc$outputForms2 = words[6];
-        ae2bc$cachedMaterialInputConfig = config;
+        ae2bc$cachedMaterialOutputConfig = config;
         ae2bc$cacheSyncedWords();
     }
 
     @Unique
     private void ae2bc$cacheSyncedWords() {
-        ae2bc$cachedInputDirections0 = ae2bc$inputDirections0;
-        ae2bc$cachedInputDirections1 = ae2bc$inputDirections1;
-        ae2bc$cachedInputDirections2 = ae2bc$inputDirections2;
-        ae2bc$cachedInputDirections3 = ae2bc$inputDirections3;
+        ae2bc$cachedOutputDirections0 = ae2bc$outputDirections0;
+        ae2bc$cachedOutputDirections1 = ae2bc$outputDirections1;
+        ae2bc$cachedOutputDirections2 = ae2bc$outputDirections2;
+        ae2bc$cachedOutputDirections3 = ae2bc$outputDirections3;
         ae2bc$cachedOutputForms0 = ae2bc$outputForms0;
         ae2bc$cachedOutputForms1 = ae2bc$outputForms1;
         ae2bc$cachedOutputForms2 = ae2bc$outputForms2;

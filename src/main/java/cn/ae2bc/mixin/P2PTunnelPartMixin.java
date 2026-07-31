@@ -1,7 +1,7 @@
 package cn.ae2bc.mixin;
 
 import appeng.parts.p2p.P2PTunnelPart;
-import cn.ae2bc.item.WirelessComponentPlacerItem;
+import cn.ae2bc.item.ComponentPlacerItem;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -17,7 +17,7 @@ public abstract class P2PTunnelPartMixin {
     private void ae2bc$preventPlacerAttunement(ItemStack heldItem, Player player,
                                                 InteractionHand hand, Vec3 pos,
                                                 CallbackInfoReturnable<Boolean> cir) {
-        if (heldItem.getItem() instanceof WirelessComponentPlacerItem) {
+        if (heldItem.getItem() instanceof ComponentPlacerItem) {
             cir.setReturnValue(true);
         }
     }

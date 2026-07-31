@@ -71,7 +71,7 @@ import java.util.UUID;
 /** A unit endpoint. Task ports are gated by their manager; energy ports operate continuously. */
 public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTickable {
     private static final ResourceLocation IDENTITY_MODEL = ResourceLocation.fromNamespaceAndPath(
-            Ae2bcMod.MOD_ID, "part/p2p/pp2p_unit_port_identity");
+            Ae2bcMod.MOD_ID, "part/p2p/pattern_p2p_unit_port_identity");
     private static final Map<PatternP2PUnitPortType, PatternP2PUnitPortModels> MODELS = createModels();
 
     private final PatternP2PUnitPortType type;
@@ -99,7 +99,7 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
         Map<PatternP2PUnitPortType, PatternP2PUnitPortModels> result = new EnumMap<>(PatternP2PUnitPortType.class);
         for (PatternP2PUnitPortType type : PatternP2PUnitPortType.values()) {
             ResourceLocation front = ResourceLocation.fromNamespaceAndPath(
-                    Ae2bcMod.MOD_ID, "part/p2p/pp2p_unit_port_" + type.name().toLowerCase());
+                    Ae2bcMod.MOD_ID, "part/p2p/pattern_p2p_unit_port_" + type.name().toLowerCase());
             result.put(type, new PatternP2PUnitPortModels(front));
         }
         return result;
@@ -567,7 +567,7 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
         @Override public long extract(AEKey what, long amount, Actionable mode, IActionSource source) { return 0; }
         @Override public void getAvailableStacks(appeng.api.stacks.KeyCounter out) { }
         @Override public net.minecraft.network.chat.Component getDescription() {
-            return net.minecraft.network.chat.Component.translatable("item.ae2_batchcraft.pp2p_unit_port_return");
+            return net.minecraft.network.chat.Component.translatable("item.ae2_batchcraft.pattern_p2p_unit_port_return");
         }
     }
 }
