@@ -22,6 +22,7 @@ import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
 import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
 import appeng.client.render.cablebus.CubeBuilder;
 import appeng.client.render.cablebus.P2PTunnelFrequencyModelData;
+import cn.ae2bc.logic.PatternP2PUnitDimensions;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -98,8 +99,8 @@ public enum PatternP2PUnitManagerFrequencyGeometry implements
             builder.setEmissiveMaterial(active);
             for (int colorIndex = 0; colorIndex < 4; colorIndex++) {
                 PatternP2PUnitModelSupport.setColor(builder, colors[colorIndex], active);
-                float u = 7 + colorIndex % 2;
-                float v = 7 + colorIndex / 2;
+                float u = PatternP2PUnitDimensions.ID_MIN + colorIndex % 2;
+                float v = PatternP2PUnitDimensions.ID_MIN + colorIndex / 2;
                 addCellToEveryFace(builder, u, v);
             }
         }
@@ -109,20 +110,27 @@ public enum PatternP2PUnitManagerFrequencyGeometry implements
             float cellV = colorIndex / 2;
             for (int cornerU = 0; cornerU < 2; cornerU++) {
                 for (int cornerV = 0; cornerV < 2; cornerV++) {
-                    float u = (cornerU == 0 ? 4.25f : 9.75f) + cellU;
-                    float v = (cornerV == 0 ? 4.25f : 9.75f) + cellV;
+                    float u = (cornerU == 0
+                            ? PatternP2PUnitDimensions.FRAME_MIN
+                            : PatternP2PUnitDimensions.INNER_MAX) + cellU;
+                    float v = (cornerV == 0
+                            ? PatternP2PUnitDimensions.FRAME_MIN
+                            : PatternP2PUnitDimensions.INNER_MAX) + cellV;
                     addCellToEveryFace(builder, u, v);
                 }
             }
         }
 
         private static void addCellToEveryFace(CubeBuilder builder, float u, float v) {
-            builder.addCube(u, v, 3.75f, u + 1, v + 1, 4);
-            builder.addCube(u, v, 12, u + 1, v + 1, 12.25f);
-            builder.addCube(3.75f, v, u, 4, v + 1, u + 1);
-            builder.addCube(12, v, u, 12.25f, v + 1, u + 1);
-            builder.addCube(u, 3.75f, v, u + 1, 4, v + 1);
-            builder.addCube(u, 12, v, u + 1, 12.25f, v + 1);
+            float min = PatternP2PUnitDimensions.FRAME_MIN;
+            float max = PatternP2PUnitDimensions.FRAME_MAX;
+            float depth = PatternP2PUnitDimensions.INDICATOR_DEPTH;
+            builder.addCube(u, v, min - depth, u + 1, v + 1, min);
+            builder.addCube(u, v, max, u + 1, v + 1, max + depth);
+            builder.addCube(min - depth, v, u, min, v + 1, u + 1);
+            builder.addCube(max, v, u, max + depth, v + 1, u + 1);
+            builder.addCube(u, min - depth, v, u + 1, min, v + 1);
+            builder.addCube(u, max, v, u + 1, max + depth, v + 1);
         }
 
         @Override public boolean useAmbientOcclusion() { return false; }

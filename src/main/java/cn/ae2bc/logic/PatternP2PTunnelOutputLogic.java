@@ -22,6 +22,7 @@ import appeng.core.settings.TickRates;
 import appeng.crafting.pattern.AEProcessingPattern;
 import appeng.me.helpers.MachineSource;
 import appeng.parts.automation.StackWorldBehaviors;
+import appeng.util.Platform;
 import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.part.PatternP2PTunnelPart;
 import cn.ae2bc.pattern.InputDirectionData;
@@ -58,6 +59,7 @@ public final class PatternP2PTunnelOutputLogic {
     private static final String ACTIVE_PATTERN = "ActivePattern";
     private static final String ACTIVE_TASK_COUNT = "ActiveTaskCount";
     private static final String SYNC_INPUT_SETTINGS = "SyncInputSettings";
+    private static final String ENERGY_DISTRIBUTION_MODE = "EnergyDistributionMode";
 
     private final IManagedGridNode mainNode;
     private final PatternP2PTunnelPart output;
@@ -69,6 +71,7 @@ public final class PatternP2PTunnelOutputLogic {
     private long lastProductExtractionTick = Long.MIN_VALUE;
     private ReturnMode returnMode = ReturnMode.UNBLOCKED;
     private boolean syncInputSettings = true;
+    private EnergyDistributionMode energyDistributionMode = EnergyDistributionMode.EVEN;
 
     public PatternP2PTunnelOutputLogic(IManagedGridNode mainNode, PatternP2PTunnelPart output) {
         this.mainNode = mainNode;
@@ -88,6 +91,29 @@ public final class PatternP2PTunnelOutputLogic {
 
     public boolean isTaskActive() {
         return !pendingInputs.isEmpty() || returnBatch.isActive();
+    }
+
+    public EnergyDistributionMode getEnergyDistributionMode() {
+        return energyDistributionMode;
+    }
+
+    public void setEnergyDistributionMode(EnergyDistributionMode mode) {
+        if (mode == null || mode == energyDistributionMode) {
+            return;
+        }
+        var grid = mainNode.getGrid();
+        if (grid != null) {
+            grid.getService(PatternP2PEnergyGridService.class).synchronizeOutputGroupMode(output, mode);
+        } else {
+            applyEnergyDistributionMode(mode);
+        }
+    }
+
+    public void applyEnergyDistributionMode(EnergyDistributionMode mode) {
+        if (mode != null && mode != energyDistributionMode) {
+            energyDistributionMode = mode;
+            output.getHost().markForSave();
+        }
     }
 
     public void resetTaskState() {
@@ -409,6 +435,9 @@ public final class PatternP2PTunnelOutputLogic {
     }
 
     public void readFromNBT(CompoundTag data, HolderLookup.Provider registries) {
+        energyDistributionMode = data.contains(ENERGY_DISTRIBUTION_MODE)
+                ? EnergyDistributionMode.fromId(data.getByte(ENERGY_DISTRIBUTION_MODE))
+                : EnergyDistributionMode.EVEN;
         returnMode = data.contains(RETURN_MODE)
                 ? ReturnMode.fromId(data.getByte(RETURN_MODE)) : ReturnMode.UNBLOCKED;
         ReturnMode loadedActiveMode = data.contains(ACTIVE_RETURN_MODE)
@@ -437,6 +466,7 @@ public final class PatternP2PTunnelOutputLogic {
     }
 
     public void writeToNBT(CompoundTag data, HolderLookup.Provider registries) {
+        data.putByte(ENERGY_DISTRIBUTION_MODE, (byte) energyDistributionMode.getId());
         data.putByte(RETURN_MODE, (byte) returnMode.getId());
         if (returnBatch.isActive()) {
             data.putByte(ACTIVE_RETURN_MODE, (byte) returnBatch.getMode().getId());
@@ -509,6 +539,10 @@ public final class PatternP2PTunnelOutputLogic {
 
     private void persistStateChange(boolean wasAvailable) {
         output.getHost().markForSave();
+        var grid = mainNode.getGrid();
+        if (grid != null) {
+            grid.getService(PatternP2PEnergyGridService.class).demandChanged();
+        }
         if (wasAvailable != canAcceptTask()) {
             output.notifyInputAvailabilityChanged();
         }
@@ -551,7 +585,8 @@ public final class PatternP2PTunnelOutputLogic {
         }
         var source = productExtractionTargetCache.getCapability();
         if (source != null) {
-            ProductExtractor.extract(source, output.getReturnInventory(), settings);
+            ProductExtractor.extract(source, output.getReturnInventory(), settings,
+                    stack -> Platform.spawnDrops(level, targetPos, List.of(stack)));
         }
         return ProductExtractionTickState.ATTEMPTED;
     }

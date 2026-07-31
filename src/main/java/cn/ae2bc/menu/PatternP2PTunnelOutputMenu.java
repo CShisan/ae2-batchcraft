@@ -60,6 +60,7 @@ public final class PatternP2PTunnelOutputMenu extends AEBaseMenu {
         sendClientAction(RESET_TASK_STATE);
     }
 
+
     private void handleSetReturnMode(ReturnMode mode) {
         if (isServerSide() && host.isStandardOutput()
                 && mode != null && !host.getOutputLogic().isSyncInputSettings()) {

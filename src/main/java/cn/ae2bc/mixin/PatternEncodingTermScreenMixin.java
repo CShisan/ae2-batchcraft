@@ -92,7 +92,8 @@ public abstract class PatternEncodingTermScreenMixin {
         }
         graphics.pose().pushPose();
         graphics.pose().translate(0, 0, 200);
-        graphics.fill(slot.x + 14, slot.y, slot.x + 16, slot.y + 2, 0xFF39B7A5);
+        graphics.fill(slot.x + 15, slot.y, slot.x + 16, slot.y + 3, 0xFF2FCCB7);
+        graphics.fill(slot.x + 13, slot.y, slot.x + 16, slot.y + 1, 0xFF65E8C9);
         graphics.pose().popPose();
     }
 

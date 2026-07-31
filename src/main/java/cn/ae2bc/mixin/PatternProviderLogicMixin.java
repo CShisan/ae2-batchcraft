@@ -9,6 +9,7 @@ import appeng.helpers.externalstorage.GenericStackInv;
 import appeng.helpers.patternprovider.PatternProviderLogic;
 import appeng.helpers.patternprovider.PatternProviderLogicHost;
 import appeng.helpers.patternprovider.PatternProviderReturnInventory;
+import appeng.util.Platform;
 import cn.ae2bc.extension.PatternProviderExtractionExtension;
 import cn.ae2bc.logic.ProductExtractionSettings;
 import cn.ae2bc.logic.ProductExtractionTickState;
@@ -175,7 +176,9 @@ public abstract class PatternProviderLogicMixin implements PatternProviderExtrac
             }
             int remaining = base.amount() - moved;
             moved += ProductExtractor.extract(target, returnInv,
-                    new ProductExtractionSettings(true, base.interval(), remaining, base.whitelist(), base.markers()));
+                    new ProductExtractionSettings(true, base.interval(), remaining, base.whitelist(), base.markers()),
+                    stack -> Platform.spawnDrops(level, host.getBlockEntity().getBlockPos().relative(direction),
+                            List.of(stack)));
         }
         ae2bc$directionCursor = (start + 1) % directions.size();
         return ProductExtractionTickState.ATTEMPTED;

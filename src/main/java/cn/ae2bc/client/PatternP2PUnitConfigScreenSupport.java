@@ -17,11 +17,15 @@ final class PatternP2PUnitConfigScreenSupport {
                 .append(Component.translatable("gui.ae2_batchcraft.pp2p_unit.break_recovery.tooltip"))));
     }
 
-    static void applyRedstonePortTooltips(AE2Button modeButton, AbstractWidget... valueWidgets) {
+    static void applyRedstonePortTooltips(Iterable<? extends AE2Button> modeButtons,
+                                          AbstractWidget... valueWidgets) {
         Component scope = Component.translatable("gui.ae2_batchcraft.pp2p_unit.port.redstone.scope");
         Tooltip tooltip = Tooltip.create(scope);
-        modeButton.setTooltip(Tooltip.create(scope.copy().append("\n").append(
-                Component.translatable("gui.ae2_batchcraft.pp2p_unit.redstone_mode.tooltip"))));
+        Tooltip modeTooltip = Tooltip.create(scope.copy().append("\n").append(
+                Component.translatable("gui.ae2_batchcraft.pp2p_unit.redstone_mode.tooltip")));
+        for (AE2Button modeButton : modeButtons) {
+            modeButton.setTooltip(modeTooltip);
+        }
         for (AbstractWidget widget : valueWidgets) {
             widget.setTooltip(tooltip);
         }

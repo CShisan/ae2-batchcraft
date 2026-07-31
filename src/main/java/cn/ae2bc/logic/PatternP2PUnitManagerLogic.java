@@ -24,6 +24,7 @@ import net.minecraft.nbt.Tag;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,8 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
     private static final String SYNC_MAIN_CONFIGURATION = "SyncUnitMainConfiguration";
     private static final String MAIN_REVISION = "PatternP2PUnitMainConfigurationRevision";
     private static final String ACTIVE_OUTPUTS = "PatternP2PUnitActiveOutputs";
+    private static final String TASK_ACTIVE = "PatternP2PUnitTaskActive";
+    private static final String ENERGY_DISTRIBUTION_MODE = "PatternP2PUnitEnergyDistributionMode";
     private static final String REMAINING_PRIMARY = "PatternP2PUnitRemainingPrimary";
     private static final String PENDING_INPUTS = "PatternP2PUnitPendingInputs";
     private static final String OUTPUT_FORM = "OutputForm";
@@ -50,6 +53,8 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
     private PatternP2PUnitConfiguration localConfiguration = PatternP2PUnitConfiguration.DEFAULT;
     private PatternP2PUnitConfiguration cachedMainConfiguration = PatternP2PUnitConfiguration.DEFAULT;
     private long cachedMainRevision = -1;
+    private boolean taskActive;
+    private EnergyDistributionMode energyDistributionMode = EnergyDistributionMode.EVEN;
     private @Nullable AEKey primaryKey;
     private long remainingPrimary;
 
@@ -66,7 +71,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
     }
 
     public boolean isTaskActive() {
-        return primaryKey != null && remainingPrimary > 0;
+        return taskActive;
     }
 
     public boolean hasTaskState() {
@@ -83,6 +88,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         }
         pendingInputs.clear();
         declaredOutputs.clear();
+        taskActive = false;
         primaryKey = null;
         remainingPrimary = 0;
         changed();
@@ -96,6 +102,21 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
 
     public boolean isSyncMainConfiguration() {
         return syncMainConfiguration;
+    }
+
+    public EnergyDistributionMode getEnergyDistributionMode() {
+        return energyDistributionMode;
+    }
+
+    public void setEnergyDistributionMode(EnergyDistributionMode mode) {
+        if (mode != null && mode != energyDistributionMode) {
+            energyDistributionMode = mode;
+            changed();
+            var grid = mainNode.getGrid();
+            if (grid != null) {
+                grid.getService(PatternP2PEnergyGridService.class).topologyChanged();
+            }
+        }
     }
 
     public void setSyncMainConfiguration(boolean enabled) {
@@ -134,8 +155,10 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         if (plan == null || plan.isEmpty()) {
             return false;
         }
+        Map<PatternP2PUnitPortType, List<PatternP2PUnitPortPart>> boundPorts = getBoundPortsByType();
         for (PendingMaterial material : plan) {
-            PatternP2PUnitPortPart port = findPort(PatternP2PUnitPortType.forOutputForm(material.form()), material.stack(), material.form());
+            PatternP2PUnitPortPart port = findPort(portsFor(boundPorts, material.form()),
+                    material.stack(), material.form());
             if (port == null) {
                 return false;
             }
@@ -143,6 +166,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
 
         declaredOutputs.clear();
         declaredOutputs.putAll(metadata.declaredOutputs());
+        taskActive = true;
         primaryKey = metadata.primaryOutput().what();
         remainingPrimary = metadata.primaryOutput().amount();
         pendingInputs.clear();
@@ -193,14 +217,30 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         return result;
     }
 
-    private @Nullable PatternP2PUnitPortPart findPort(PatternP2PUnitPortType type, GenericStack stack, MaterialOutputForm form) {
+    private Map<PatternP2PUnitPortType, List<PatternP2PUnitPortPart>> getBoundPortsByType() {
         var grid = mainNode.getGrid();
         if (grid == null) {
-            return null;
+            return Map.of();
         }
+        Map<PatternP2PUnitPortType, List<PatternP2PUnitPortPart>> result =
+                new EnumMap<>(PatternP2PUnitPortType.class);
         for (PatternP2PUnitPortPart port : grid.getMachines(PatternP2PUnitPortPart.class)) {
-            if (port.getType() == type && port.isBoundTo(manager)
-                    && port.insertInput(manager, stack, form, Actionable.SIMULATE) >= stack.amount()) {
+            if (port.isBoundTo(manager)) {
+                result.computeIfAbsent(port.getType(), ignored -> new ArrayList<>()).add(port);
+            }
+        }
+        return result;
+    }
+
+    private static List<PatternP2PUnitPortPart> portsFor(
+            Map<PatternP2PUnitPortType, List<PatternP2PUnitPortPart>> boundPorts, MaterialOutputForm form) {
+        return boundPorts.getOrDefault(PatternP2PUnitPortType.forOutputForm(form), List.of());
+    }
+
+    private @Nullable PatternP2PUnitPortPart findPort(List<PatternP2PUnitPortPart> boundPorts, GenericStack stack,
+                                                       MaterialOutputForm form) {
+        for (PatternP2PUnitPortPart port : boundPorts) {
+            if (port.insertInput(manager, stack, form, Actionable.SIMULATE) >= stack.amount()) {
                 return port;
             }
         }
@@ -209,9 +249,11 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
 
     private boolean dispatchPending() {
         boolean changed = false;
+        Map<PatternP2PUnitPortType, List<PatternP2PUnitPortPart>> boundPorts = getBoundPortsByType();
         for (var iterator = pendingInputs.listIterator(); iterator.hasNext(); ) {
             PendingMaterial pending = iterator.next();
-            PatternP2PUnitPortPart port = findPort(PatternP2PUnitPortType.forOutputForm(pending.form()), pending.stack(), pending.form());
+            PatternP2PUnitPortPart port = findPort(portsFor(boundPorts, pending.form()),
+                    pending.stack(), pending.form());
             if (port == null) {
                 continue;
             }
@@ -227,7 +269,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
             }
         }
         if (changed) {
-            changed();
+            finishTaskIfComplete();
         }
         return changed;
     }
@@ -263,14 +305,23 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         if (Objects.equals(primaryKey, stack.what())) {
             remainingPrimary = Math.max(0, remainingPrimary - stack.amount());
             if (remainingPrimary == 0) {
-                finishTask();
+                finishTaskIfComplete();
             } else {
                 changed();
             }
         }
     }
 
+    private void finishTaskIfComplete() {
+        if (UnitTaskCompletion.isComplete(taskActive, remainingPrimary, !pendingInputs.isEmpty())) {
+            finishTask();
+        } else {
+            changed();
+        }
+    }
+
     private void finishTask() {
+        taskActive = false;
         primaryKey = null;
         remainingPrimary = 0;
         declaredOutputs.clear();
@@ -294,7 +345,10 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
 
     private void changed() {
         manager.getHost().markForSave();
-        mainNode.ifPresent((grid, node) -> grid.getTickManager().alertDevice(node));
+        mainNode.ifPresent((grid, node) -> {
+            grid.getTickManager().alertDevice(node);
+            grid.getService(PatternP2PEnergyGridService.class).demandChanged();
+        });
     }
 
     @Override
@@ -311,11 +365,15 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
     }
 
     public void readFromNBT(CompoundTag data, HolderLookup.Provider registries) {
+        energyDistributionMode = data.contains(ENERGY_DISTRIBUTION_MODE)
+                ? EnergyDistributionMode.fromId(data.getByte(ENERGY_DISTRIBUTION_MODE))
+                : EnergyDistributionMode.EVEN;
         syncMainConfiguration = !data.contains(SYNC_MAIN_CONFIGURATION)
                 || data.getBoolean(SYNC_MAIN_CONFIGURATION);
         localConfiguration = PatternP2PUnitConfiguration.read(data.getCompound(LOCAL_CONFIGURATION));
         cachedMainConfiguration = PatternP2PUnitConfiguration.read(data.getCompound(MAIN_CONFIGURATION));
         cachedMainRevision = data.getLong(MAIN_REVISION);
+        taskActive = data.getBoolean(TASK_ACTIVE);
         declaredOutputs.clear();
         for (var stack : readStacks(data.getList(ACTIVE_OUTPUTS, Tag.TAG_COMPOUND), registries)) {
             declaredOutputs.merge(stack.what(), stack.amount(), PatternP2PUnitManagerLogic::saturatingAdd);
@@ -337,10 +395,12 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
     }
 
     public void writeToNBT(CompoundTag data, HolderLookup.Provider registries) {
+        data.putByte(ENERGY_DISTRIBUTION_MODE, (byte) energyDistributionMode.getId());
         data.putBoolean(SYNC_MAIN_CONFIGURATION, syncMainConfiguration);
         data.put(LOCAL_CONFIGURATION, localConfiguration.write());
         data.put(MAIN_CONFIGURATION, cachedMainConfiguration.write());
         data.putLong(MAIN_REVISION, cachedMainRevision);
+        data.putBoolean(TASK_ACTIVE, taskActive);
         List<GenericStack> outputs = declaredOutputs.entrySet().stream()
                 .map(entry -> new GenericStack(entry.getKey(), entry.getValue())).toList();
         data.put(ACTIVE_OUTPUTS, writeStacks(outputs, registries));
@@ -369,6 +429,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
     public void clearContent() {
         pendingInputs.clear();
         declaredOutputs.clear();
+        taskActive = false;
         primaryKey = null;
         remainingPrimary = 0;
     }

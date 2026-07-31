@@ -115,11 +115,10 @@ class GuidePageResourceTest {
     void energyTunnelScreenProvidesBothEnergyModes() throws Exception {
         String screen = readText(ENERGY_TUNNEL_SCREEN);
         assertTrue(screen.contains("\"width\": 176"));
-        assertTrue(screen.contains("\"height\": 83"));
+        assertTrue(screen.contains("\"height\": 109"));
         assertTrue(screen.contains("\"passive\""));
         assertTrue(screen.contains("\"active\""));
-        assertTrue(screen.contains("gui.ae2_batchcraft.energy.mode_value"));
-        assertTrue(screen.contains("gui.ae2_batchcraft.energy.pull_interval"));
+        assertTrue(screen.contains("\"energyDistributionMode\""));
     }
 
     @Test

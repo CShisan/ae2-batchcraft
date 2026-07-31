@@ -22,6 +22,10 @@ public enum PatternP2PUnitPortType {
         return serializedName;
     }
 
+    public boolean acceptsExternalEnergy() {
+        return this == ENERGY;
+    }
+
     public static PatternP2PUnitPortType forOutputForm(MaterialOutputForm form) {
         return switch (form) {
             case NORMAL -> TRANSFER;

@@ -30,6 +30,7 @@ import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.item.WirelessComponentPlacerItem;
 import cn.ae2bc.logic.PatternP2PTunnelInputLogic;
 import cn.ae2bc.logic.PatternP2PTunnelOutputLogic;
+import cn.ae2bc.logic.PatternP2PEnergyGridService;
 import cn.ae2bc.logic.RemoteReturnInventory;
 import cn.ae2bc.logic.ProductExtractionSettings;
 import cn.ae2bc.extension.PatternProviderExtractionExtension;
@@ -72,6 +73,8 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
     private final GenericStackItemStorage returnItemHandler;
     private final GenericStackFluidStorage returnFluidHandler;
     private BlockCapabilityCache<IEnergyStorage, Direction> energyTargetCache;
+    private boolean energyTargetIsEnergyTunnel;
+    private boolean energyTargetResolved;
     private BlockCapabilityCache<GenericInternalInventory, Direction> returnTargetCache;
 
     public PatternP2PTunnelPart(IPartItem<?> partItem, boolean output) {
@@ -217,13 +220,17 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
         }
 
         var targetPos = getBlockEntity().getBlockPos().relative(side);
-        var targetHost = PartHelper.getPartHost(level, targetPos);
-        if (targetHost != null
-                && targetHost.getPart(side.getOpposite()) instanceof PatternP2PTunnelEnergyPart) {
+        Direction targetSide = side.getOpposite();
+        if (!energyTargetResolved) {
+            var targetHost = PartHelper.getPartHost(level, targetPos);
+            energyTargetIsEnergyTunnel = targetHost != null
+                    && targetHost.getPart(targetSide) instanceof PatternP2PTunnelEnergyPart;
+            energyTargetResolved = true;
+        }
+        if (energyTargetIsEnergyTunnel) {
             return 0;
         }
 
-        Direction targetSide = side.getOpposite();
         if (energyTargetCache == null
                 || energyTargetCache.level() != serverLevel
                 || !energyTargetCache.pos().equals(targetPos)
@@ -385,6 +392,26 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
             inputLogic.synchronizeSettings();
         }
         getBlockEntity().invalidateCapabilities();
+        var grid = getMainNode().getGrid();
+        if (grid != null) {
+            var energyService = grid.getService(PatternP2PEnergyGridService.class);
+            energyService.topologyChanged();
+            if (isStandardOutput()) {
+                energyService.synchronizeOutputGroupMode(this, null);
+            }
+        }
+    }
+
+    @Override
+    public void onNeighborChanged(net.minecraft.world.level.BlockGetter level,
+                                  net.minecraft.core.BlockPos pos, net.minecraft.core.BlockPos neighbor) {
+        energyTargetCache = null;
+        energyTargetResolved = false;
+        energyTargetIsEnergyTunnel = false;
+        var grid = getMainNode().getGrid();
+        if (grid != null) {
+            grid.getService(PatternP2PEnergyGridService.class).demandChanged();
+        }
     }
 
     public void notifyInputAvailabilityChanged() {

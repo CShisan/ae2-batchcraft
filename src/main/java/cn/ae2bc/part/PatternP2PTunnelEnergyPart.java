@@ -2,7 +2,6 @@ package cn.ae2bc.part;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerUnit;
-import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
@@ -16,7 +15,7 @@ import appeng.api.util.AECableType;
 import appeng.parts.networking.EnergyAcceptorPart;
 import appeng.parts.p2p.P2PModels;
 import cn.ae2bc.Ae2bcMod;
-import cn.ae2bc.logic.FairEnergyDistributor;
+import cn.ae2bc.logic.PatternP2PEnergyGridService;
 import cn.ae2bc.menu.PatternP2PTunnelEnergyMenu;
 import appeng.menu.MenuOpener;
 import appeng.menu.locator.MenuLocators;
@@ -33,10 +32,9 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
-import java.util.List;
-
 public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
     public static final int PULL_INTERVAL = 5;
+    private static final String PENDING_FE_TAG = "PendingFe";
     private static final P2PModels MODELS = new P2PModels(
             ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/p2p/pattern_p2p_tunnel_energy"));
 
@@ -44,13 +42,12 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
     private boolean transferringEnergy;
     private boolean pullEnabled;
     private int pullInterval = PULL_INTERVAL;
-    private int distributionCursor;
     private long demandCacheTick = Long.MIN_VALUE;
     private int demandCacheFe;
-    private IGrid eligibleReceiversGrid;
-    private long eligibleReceiversTick = Long.MIN_VALUE;
-    private List<EnergyReceiver> eligibleReceivers = List.of();
+    private int pendingFe;
     private BlockCapabilityCache<IEnergyStorage, Direction> sourceEnergyCache;
+    private boolean sourceIsEnergyTunnel;
+    private boolean sourceResolved;
 
     public PatternP2PTunnelEnergyPart(IPartItem<?> partItem) {
         super(partItem);
@@ -98,6 +95,7 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
     public void readFromNBT(CompoundTag data, HolderLookup.Provider registries) {
         super.readFromNBT(data, registries);
         pullEnabled = data.getBoolean("PullEnabled");
+        pendingFe = Math.max(0, data.getInt(PENDING_FE_TAG));
         pullInterval = PULL_INTERVAL;
     }
 
@@ -105,6 +103,11 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
     public void writeToNBT(CompoundTag data, HolderLookup.Provider registries) {
         super.writeToNBT(data, registries);
         data.putBoolean("PullEnabled", pullEnabled);
+        if (pendingFe > 0) {
+            data.putInt(PENDING_FE_TAG, pendingFe);
+        } else {
+            data.remove(PENDING_FE_TAG);
+        }
     }
 
     @Override
@@ -116,7 +119,8 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
         double localDemand = super.getFunnelPowerDemand(maxRequired);
         double remainingCapacity = Math.max(0, maxRequired - localDemand);
         int remoteLimit = aeToFeFloor(remainingCapacity);
-        int remoteDemand = getRemoteDemandFe(getEligibleReceivers(), remoteLimit);
+        var energyService = getEnergyGridService();
+        int remoteDemand = energyService == null ? 0 : energyService.getDemand(remoteLimit);
         return Math.min(maxRequired, localDemand + PowerUnit.FE.convertTo(PowerUnit.AE, remoteDemand));
     }
 
@@ -143,19 +147,11 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
     }
 
     private int distributeToOutputs(int offered, boolean simulate) {
-        List<EnergyReceiver> receivers = getEligibleReceivers();
-        int receiverCount = receivers.size();
-        if (offered <= 0 || receiverCount == 0) {
+        if (offered <= 0) {
             return 0;
         }
-
-        int startIndex = Math.floorMod(distributionCursor, receiverCount);
-        int accepted = FairEnergyDistributor.distribute(offered, receiverCount, startIndex,
-                (index, amount) -> receivers.get(index).receive(amount, simulate));
-        if (!simulate) {
-            distributionCursor = (startIndex + 1) % receiverCount;
-        }
-        return accepted;
+        var energyService = getEnergyGridService();
+        return energyService == null ? 0 : energyService.distribute(offered, simulate);
     }
 
     private int getPullDemandFe() {
@@ -183,6 +179,10 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
     }
 
     private PullOutcome pullEnergyFromAdjacent() {
+        int flushed = flushPendingEnergy();
+        if (pendingFe > 0) {
+            return new PullOutcome(flushed, getPullDemandFe(), true);
+        }
         int demand = getPullDemandFe();
         if (demand <= 0) {
             return PullOutcome.NO_DEMAND;
@@ -194,13 +194,17 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
         }
 
         var targetPos = getBlockEntity().getBlockPos().relative(side);
-        var targetHost = PartHelper.getPartHost(level, targetPos);
-        if (targetHost != null
-                && targetHost.getPart(side.getOpposite()) instanceof PatternP2PTunnelEnergyPart) {
+        Direction targetSide = side.getOpposite();
+        if (!sourceResolved) {
+            var targetHost = PartHelper.getPartHost(level, targetPos);
+            sourceIsEnergyTunnel = targetHost != null
+                    && targetHost.getPart(targetSide) instanceof PatternP2PTunnelEnergyPart;
+            sourceResolved = true;
+        }
+        if (sourceIsEnergyTunnel) {
             return PullOutcome.NO_SOURCE;
         }
 
-        Direction targetSide = side.getOpposite();
         if (sourceEnergyCache == null
                 || sourceEnergyCache.level() != level
                 || !sourceEnergyCache.pos().equals(targetPos)
@@ -223,7 +227,11 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
         int accepted = getEnergyStorage().receiveEnergy(extracted, false);
         int rejected = extracted - accepted;
         if (rejected > 0 && source.canReceive()) {
-            source.receiveEnergy(rejected, false);
+            rejected -= source.receiveEnergy(rejected, false);
+        }
+        if (rejected > 0) {
+            pendingFe = (int) Math.min(Integer.MAX_VALUE, (long) pendingFe + rejected);
+            getHost().markForSave();
         }
 
         int remainingDemand = getPullDemandFe();
@@ -232,40 +240,29 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
         return new PullOutcome(accepted, remainingDemand, sourceHasMore);
     }
 
-    private int getRemoteDemandFe(List<EnergyReceiver> receivers, int limit) {
-        int demand = 0;
-        for (var receiver : receivers) {
-            int remaining = limit - demand;
-            if (remaining <= 0) {
-                break;
-            }
-            demand += receiver.receive(remaining, true);
+    private int flushPendingEnergy() {
+        if (pendingFe <= 0 || transferringEnergy) {
+            return 0;
         }
-        return demand;
+        transferringEnergy = true;
+        try {
+            int accepted = distributeToOutputs(pendingFe, false);
+            pendingFe -= accepted;
+            if (accepted > 0) {
+                getHost().markForSave();
+            }
+            return accepted;
+        } finally {
+            transferringEnergy = false;
+        }
     }
 
-    private List<EnergyReceiver> getEligibleReceivers() {
+    private PatternP2PEnergyGridService getEnergyGridService() {
         var grid = getMainNode().getGrid();
         if (grid == null) {
-            eligibleReceiversGrid = null;
-            eligibleReceiversTick = Long.MIN_VALUE;
-            eligibleReceivers = List.of();
-            return eligibleReceivers;
+            return null;
         }
-        var level = getLevel();
-        long gameTime = level == null ? Long.MIN_VALUE : level.getGameTime();
-        if (eligibleReceiversGrid != grid || eligibleReceiversTick != gameTime) {
-            eligibleReceivers = java.util.stream.Stream.concat(
-                            grid.getMachines(PatternP2PTunnelPart.class).stream()
-                                    .filter(PatternP2PTunnelPart::isOperationalOutput)
-                                    .map(output -> (EnergyReceiver) output::receiveExternalEnergy),
-                            grid.getMachines(PatternP2PUnitPortPart.class).stream()
-                                    .map(port -> (EnergyReceiver) port::receiveExternalEnergy))
-                    .toList();
-            eligibleReceiversGrid = grid;
-            eligibleReceiversTick = gameTime;
-        }
-        return eligibleReceivers;
+        return grid.getService(PatternP2PEnergyGridService.class);
     }
 
     private static int aeToFeFloor(double amount) {
@@ -320,6 +317,18 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
         return super.onUseItemOn(heldItem, player, hand, pos);
     }
 
+    @Override
+    public void onNeighborChanged(net.minecraft.world.level.BlockGetter level,
+                                  net.minecraft.core.BlockPos pos, net.minecraft.core.BlockPos neighbor) {
+        sourceEnergyCache = null;
+        sourceIsEnergyTunnel = false;
+        sourceResolved = false;
+        var grid = getMainNode().getGrid();
+        if (grid != null) {
+            grid.getTickManager().alertDevice(getMainNode().getNode());
+        }
+    }
+
     private void openConfigurationMenu(Player player) {
         MenuOpener.open(PatternP2PTunnelEnergyMenu.TYPE, player, MenuLocators.forPart(this));
     }
@@ -348,9 +357,9 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
             }
 
             var result = pullEnergyFromAdjacent();
-            if (result.shouldAccelerate()) {
-                pullInterval = Math.max(1, pullInterval - 2);
-                return TickRateModulation.FASTER;
+            if (result.accepted() > 0) {
+                pullInterval = 1;
+                return TickRateModulation.URGENT;
             }
             if (result.remainingDemand() <= 0 || !result.sourceHasMore()) {
                 pullInterval = PULL_INTERVAL;
@@ -368,6 +377,9 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
             if (maxReceive <= 0) {
                 return 0;
             }
+            if (!simulate) {
+                flushPendingEnergy();
+            }
             double overflow = injectExternalPower(PowerUnit.FE, maxReceive,
                     simulate ? Actionable.SIMULATE : Actionable.MODULATE);
             int accepted = (int) Math.clamp(maxReceive - overflow, 0, maxReceive);
@@ -384,12 +396,13 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
 
         @Override
         public int getEnergyStored() {
-            return 0;
+            return pendingFe;
         }
 
         @Override
         public int getMaxEnergyStored() {
-            return getCachedDemandFe();
+            long capacity = (long) pendingFe + getCachedDemandFe();
+            return (int) Math.min(Integer.MAX_VALUE, capacity);
         }
 
         @Override
@@ -412,8 +425,4 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
         }
     }
 
-    @FunctionalInterface
-    private interface EnergyReceiver {
-        int receive(int maxReceive, boolean simulate);
-    }
 }

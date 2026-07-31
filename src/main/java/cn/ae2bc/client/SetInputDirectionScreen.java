@@ -11,6 +11,7 @@ import cn.ae2bc.pattern.MaterialOutputForm;
 import appeng.api.stacks.GenericStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
+import net.minecraft.client.gui.components.Tooltip;
 import org.jetbrains.annotations.Nullable;
 
 public final class SetInputDirectionScreen<C extends PatternEncodingTermMenu>
@@ -24,18 +25,21 @@ public final class SetInputDirectionScreen<C extends PatternEncodingTermMenu>
         this.inputSlot = inputSlot;
         this.layout = layout;
 
-        widgets.addButton("auto", DirectionText.name(null, layout), () -> selectDirection(null));
-        widgets.addButton("front", DirectionText.name(layout.front(), layout), () -> selectDirection(layout.front()));
-        widgets.addButton("left", DirectionText.name(layout.left(), layout), () -> selectDirection(layout.left()));
-        widgets.addButton("up", DirectionText.name(Direction.UP, layout), () -> selectDirection(Direction.UP));
-        widgets.addButton("right", DirectionText.name(layout.right(), layout), () -> selectDirection(layout.right()));
-        widgets.addButton("down", DirectionText.name(Direction.DOWN, layout), () -> selectDirection(Direction.DOWN));
-        widgets.addButton("opposite", DirectionText.name(layout.back(), layout), () -> selectDirection(layout.back()));
+        addDirectionButton("auto", null);
+        addDirectionButton("front", layout.front());
+        addDirectionButton("left", layout.left());
+        addDirectionButton("up", Direction.UP);
+        addDirectionButton("right", layout.right());
+        addDirectionButton("down", Direction.DOWN);
+        addDirectionButton("opposite", layout.back());
         for (MaterialOutputForm form : MaterialOutputForm.values()) {
             String name = form.getSerializedName();
             var button = widgets.addButton("output" + Character.toUpperCase(name.charAt(0)) + name.substring(1),
                     Component.translatable("gui.ae2_batchcraft.material_output_form." + name),
                     () -> selectOutputForm(form));
+            button.setTooltip(Tooltip.create(Component.translatable(
+                    "gui.ae2_batchcraft.material_output_form.tooltip",
+                    Component.translatable("gui.ae2_batchcraft.material_output_form." + name))));
             GenericStack input = GenericStack.fromItemStack(
                     getMenu().getProcessingInputSlots()[inputSlot].getItem());
             button.active = input != null && form.supports(input.what());
@@ -44,6 +48,13 @@ public final class SetInputDirectionScreen<C extends PatternEncodingTermMenu>
         var icon = getMenu().getHost().getMainMenuIcon();
         var backButton = new TabButton(Icon.BACK, icon.getHoverName(), button -> returnToParent());
         widgets.add("back", backButton);
+    }
+
+    private void addDirectionButton(String widgetId, @Nullable Direction direction) {
+        Component name = DirectionText.name(direction, layout);
+        var button = widgets.addButton(widgetId, name, () -> selectDirection(direction));
+        button.setTooltip(Tooltip.create(Component.translatable(
+                "gui.ae2_batchcraft.output_direction.tooltip", name)));
     }
 
     private void selectDirection(@Nullable Direction direction) {

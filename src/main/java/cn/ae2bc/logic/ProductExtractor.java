@@ -7,13 +7,21 @@ import cn.ae2bc.Ae2bcMod;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.items.IItemHandler;
 
+import java.util.Objects;
+
 /** Moves filtered item stacks into an AE2 return inventory without extracting items that cannot be stored. */
 public final class ProductExtractor {
+    @FunctionalInterface
+    public interface OverflowHandler {
+        void recover(ItemStack stack);
+    }
+
     private ProductExtractor() {
     }
 
     public static int extract(IItemHandler source, GenericInternalInventory destination,
-                              ProductExtractionSettings settings) {
+                              ProductExtractionSettings settings, OverflowHandler overflowHandler) {
+        Objects.requireNonNull(overflowHandler, "overflowHandler");
         if (source == null || destination == null || !destination.canInsert() || !settings.enabled()) {
             return 0;
         }
@@ -47,14 +55,16 @@ public final class ProductExtractor {
                         insert(destination, extractedKey, extracted.getCount(), Actionable.SIMULATE));
                 int inserted = insertable <= 0 ? 0 : (int) insert(
                         destination, extractedKey, insertable, Actionable.MODULATE);
-                moved += inserted;
+                ExtractionRecoveryPlan recovery = ExtractionRecoveryPlan.create(extracted.getCount(), inserted);
+                moved += recovery.insertedCount();
 
-                if (inserted < extracted.getCount()) {
+                if (recovery.remainderCount() > 0) {
                     ItemStack remainder = reinsert(source, slot,
-                            extracted.copyWithCount(extracted.getCount() - inserted));
+                            extracted.copyWithCount(recovery.remainderCount()));
                     if (!remainder.isEmpty()) {
                         Ae2bcMod.LOGGER.error("Item handler rejected {} after an inconsistent extraction simulation",
                                 remainder);
+                        overflowHandler.recover(remainder.copy());
                     }
                 }
             }
@@ -65,10 +75,10 @@ public final class ProductExtractor {
     }
 
     public static int extract(IItemHandler source, RemoteReturnInventory destination,
-                              ProductExtractionSettings settings) {
+                              ProductExtractionSettings settings, OverflowHandler overflowHandler) {
         destination.setProductExtractionBypass(true);
         try {
-            return extract(source, (GenericInternalInventory) destination, settings);
+            return extract(source, (GenericInternalInventory) destination, settings, overflowHandler);
         } finally {
             destination.setProductExtractionBypass(false);
         }

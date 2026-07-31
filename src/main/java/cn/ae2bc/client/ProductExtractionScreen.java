@@ -32,9 +32,13 @@ public final class ProductExtractionScreen extends AEBaseScreen<ProductExtractio
         intervalReset = widgets.addButton("intervalReset",
                 Component.translatable("gui.ae2_batchcraft.product_extraction.reset"),
                 () -> menu.setInterval(ProductExtractionSettings.DEFAULT_INTERVAL));
+        intervalReset.setTooltip(Tooltip.create(Component.translatable(
+                "gui.ae2_batchcraft.product_extraction.interval_reset.tooltip")));
         amountReset = widgets.addButton("amountReset",
                 Component.translatable("gui.ae2_batchcraft.product_extraction.reset"),
                 () -> menu.setAmount(ProductExtractionSettings.DEFAULT_AMOUNT));
+        amountReset.setTooltip(Tooltip.create(Component.translatable(
+                "gui.ae2_batchcraft.product_extraction.amount_reset.tooltip")));
     }
 
     @Override

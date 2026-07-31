@@ -67,16 +67,28 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
             int axis = i;
             minusButtons[i] = addCompactButton("offset" + capitalize(axes[i]) + "Minus", Component.literal("-"),
                     () -> menu.adjustOffset(axis, -1));
+            minusButtons[i].setTooltip(Tooltip.create(Component.translatable(
+                    "gui.ae2_batchcraft.component_placer.offset.decrease.tooltip",
+                    axes[i].toUpperCase(java.util.Locale.ROOT))));
             plusButtons[i] = addCompactButton("offset" + capitalize(axes[i]) + "Plus", Component.literal("+"),
                     () -> menu.adjustOffset(axis, 1));
+            plusButtons[i].setTooltip(Tooltip.create(Component.translatable(
+                    "gui.ae2_batchcraft.component_placer.offset.increase.tooltip",
+                    axes[i].toUpperCase(java.util.Locale.ROOT))));
         }
 
         resetOffsets = addCompactButton("resetOffsets",
                 Component.translatable("gui.ae2_batchcraft.component_placer.reset_offsets"), menu::resetOffsets);
+        resetOffsets.setTooltip(Tooltip.create(Component.translatable(
+                "gui.ae2_batchcraft.component_placer.reset_offsets.tooltip")));
         clearSelection = addCompactButton("clearSelection",
                 Component.translatable("gui.ae2_batchcraft.component_placer.clear_selection"), menu::clearSelection);
+        clearSelection.setTooltip(Tooltip.create(Component.translatable(
+                "gui.ae2_batchcraft.component_placer.clear_selection.tooltip")));
         execute = addCompactButton("execute",
                 Component.translatable("gui.ae2_batchcraft.component_placer.execute"), menu::execute);
+        execute.setTooltip(Tooltip.create(Component.translatable(
+                "gui.ae2_batchcraft.component_placer.execute.tooltip")));
     }
 
     @Override
@@ -139,7 +151,9 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
         setTextContent("frequencyText", Platform.p2p().toColoredHexString((short) menu.frequency));
         setTextHidden("aeLinkWarning", menu.aeConnected);
         setTextHidden("aeLinkConnected", !menu.aeConnected);
-        execute.setTooltip(Tooltip.create(selectionStatus()));
+        execute.setTooltip(Tooltip.create(Component.translatable(
+                "gui.ae2_batchcraft.component_placer.execute.tooltip")
+                .append("\n").append(selectionStatus())));
     }
 
     private Component selectionStatus() {
@@ -161,7 +175,10 @@ public final class P2PPlacerScreen extends AEBaseScreen<P2PPlacerMenu> {
     }
 
     private void addDirectionButton(String widgetId, Direction direction, Component label) {
-        directionButtons.put(direction, addCompactButton(widgetId, label, () -> menu.setDirection(direction)));
+        var button = addCompactButton(widgetId, label, () -> menu.setDirection(direction));
+        button.setTooltip(Tooltip.create(Component.translatable(
+                "gui.ae2_batchcraft.component_placer.direction.tooltip", label)));
+        directionButtons.put(direction, button);
     }
 
     private AE2Button addCompactButton(String widgetId, Component label, Runnable action) {

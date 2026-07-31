@@ -5,7 +5,7 @@
   ],
   "generatedBackground": {
     "width": 176,
-    "height": 83
+    "height": 109
   },
   "text": {
     "dialog_title": {
@@ -16,37 +16,25 @@
         "left": 8,
         "top": 6
       }
-    },
-    "mode": {
-      "text": {
-        "translate": "gui.ae2_batchcraft.energy.mode_value"
-      },
-      "position": {
-        "left": 8,
-        "top": 20
-      }
-    },
-    "interval": {
-      "text": {
-        "translate": "gui.ae2_batchcraft.energy.pull_interval"
-      },
-      "position": {
-        "left": 8,
-        "top": 34
-      }
     }
   },
   "widgets": {
     "passive": {
-      "left": 8,
-      "top": 54,
-      "width": 77,
+      "left": 12,
+      "top": 35,
+      "width": 73,
       "height": 18
     },
     "active": {
       "left": 91,
-      "top": 54,
-      "width": 77,
+      "top": 35,
+      "width": 73,
+      "height": 18
+    },
+    "energyDistributionMode": {
+      "left": 12,
+      "top": 77,
+      "width": 152,
       "height": 18
     }
   }

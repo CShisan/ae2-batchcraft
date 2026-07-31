@@ -4,6 +4,8 @@ import appeng.menu.AEBaseMenu;
 import appeng.menu.guisync.GuiSync;
 import appeng.menu.implementations.MenuTypeBuilder;
 import cn.ae2bc.Ae2bcMod;
+import cn.ae2bc.logic.EnergyDistributionMode;
+import cn.ae2bc.logic.PatternP2PEnergyGridService;
 import cn.ae2bc.logic.RedstoneOutputMode;
 import cn.ae2bc.logic.ReturnMode;
 import cn.ae2bc.logic.PatternP2PUnitConfiguration;
@@ -20,6 +22,7 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
     private static final String SET_REDSTONE_MODE = "setRedstoneMode";
     private static final String SET_PULSE_WIDTH = "setPulseWidth";
     private static final String SET_PULSE_PERIOD = "setPulsePeriod";
+    private static final String SET_ENERGY_DISTRIBUTION_MODE = "setEnergyDistributionMode";
     private static final String RESET_TASK_STATE = "resetTaskState";
 
     public static final MenuType<PatternP2PUnitManagerMenu> TYPE = MenuTypeBuilder
@@ -35,6 +38,7 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
     @GuiSync(4) public RedstoneOutputMode redstoneMode = RedstoneOutputMode.SINGLE_TRIGGER;
     @GuiSync(5) public int pulseWidth = PatternP2PUnitConfiguration.DEFAULT_PULSE_WIDTH;
     @GuiSync(6) public int pulsePeriod = PatternP2PUnitConfiguration.DEFAULT_PULSE_PERIOD;
+    @GuiSync(7) public EnergyDistributionMode energyDistributionMode = EnergyDistributionMode.EVEN;
 
     public PatternP2PUnitManagerMenu(int id, Inventory inventory, PatternP2PUnitManagerPart host) {
         super(TYPE, id, inventory, host);
@@ -54,6 +58,8 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
                 configuration().withRedstone(redstoneStrength, redstoneMode, value, pulsePeriod)));
         registerClientAction(SET_PULSE_PERIOD, Integer.class, value -> update(
                 configuration().withRedstone(redstoneStrength, redstoneMode, pulseWidth, value)));
+        registerClientAction(SET_ENERGY_DISTRIBUTION_MODE, EnergyDistributionMode.class,
+                this::handleSetEnergyDistributionMode);
         registerClientAction(RESET_TASK_STATE, this::handleResetTaskState);
     }
 
@@ -63,6 +69,9 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
             var logic = host.getLogic();
             syncMain = logic.isSyncMainConfiguration();
             copy(logic.getEffectiveConfiguration());
+            var grid = host.getMainNode().getGrid();
+            energyDistributionMode = grid == null ? logic.getEnergyDistributionMode()
+                    : grid.getService(PatternP2PEnergyGridService.class).getGlobalEnergyDistributionMode();
         }
         super.broadcastChanges();
     }
@@ -84,10 +93,23 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
         pulseWidth = Math.min(pulseWidth, pulsePeriod);
         sendClientAction(SET_PULSE_PERIOD, pulsePeriod);
     }
+    public void setEnergyDistributionMode(EnergyDistributionMode value) {
+        energyDistributionMode = value;
+        sendClientAction(SET_ENERGY_DISTRIBUTION_MODE, value);
+    }
     public void resetTaskState() { sendClientAction(RESET_TASK_STATE); }
 
     private void handleResetTaskState() {
         if (isServerSide()) host.resetTaskState();
+    }
+
+    private void handleSetEnergyDistributionMode(EnergyDistributionMode mode) {
+        if (isServerSide() && mode != null) {
+            var grid = host.getMainNode().getGrid();
+            if (grid != null) {
+                grid.getService(PatternP2PEnergyGridService.class).setGlobalEnergyDistributionMode(mode);
+            }
+        }
     }
 
     private PatternP2PUnitConfiguration configuration() {

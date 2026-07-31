@@ -29,6 +29,7 @@ import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.logic.PatternDispatchMetadata;
 import cn.ae2bc.logic.RemoteReturnInventory;
 import cn.ae2bc.logic.PatternP2PUnitIdentityColors;
+import cn.ae2bc.logic.PatternP2PUnitDimensions;
 import cn.ae2bc.logic.PatternP2PUnitManagerLogic;
 import cn.ae2bc.client.model.PatternP2PUnitModelData;
 import cn.ae2bc.menu.PatternP2PUnitManagerMenu;
@@ -59,6 +60,7 @@ public final class PatternP2PUnitManagerPart extends CablePart implements Patter
     private static final String PATTERN_P2P_UNIT_ID_TAG = "PatternP2PUnitId";
     private static final IPartModel MODEL = new PartModel(
             ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/p2p/pp2p_unit_manager"),
+            ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/pp2p_unit_manager_glass"),
             ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "part/pp2p_unit_manager_frequency"));
 
     private final PatternP2PUnitManagerLogic logic = new PatternP2PUnitManagerLogic(getMainNode(), this);
@@ -342,7 +344,8 @@ public final class PatternP2PUnitManagerPart extends CablePart implements Patter
     @Override
     public void getBoxes(IPartCollisionHelper helper, Predicate<@Nullable Direction> filterConnections) {
         updateConnections();
-        addNonDenseBoxes(helper, filterConnections, 4, 12);
+        addNonDenseBoxes(helper, filterConnections,
+                PatternP2PUnitDimensions.FRAME_MIN, PatternP2PUnitDimensions.FRAME_MAX);
     }
 
     @Override

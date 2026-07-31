@@ -9,6 +9,7 @@ import appeng.api.config.Actionable;
 import appeng.api.implementations.items.IMemoryCard;
 import appeng.api.implementations.items.MemoryCardMessages;
 import appeng.api.networking.IGridNode;
+import appeng.api.networking.IGridNodeListener;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
@@ -36,6 +37,7 @@ import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.logic.RedstoneOutputMode;
 import cn.ae2bc.logic.PatternP2PUnitIdentityColors;
 import cn.ae2bc.logic.PatternP2PUnitPortType;
+import cn.ae2bc.logic.PatternP2PEnergyGridService;
 import cn.ae2bc.client.model.PatternP2PUnitModelData;
 import cn.ae2bc.pattern.MaterialOutputForm;
 import cn.ae2bc.registry.ModContent;
@@ -66,7 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** A task-gated unit endpoint. Ports never perform world interaction without an active manager task. */
+/** A unit endpoint. Task ports are gated by their manager; energy ports operate continuously. */
 public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTickable {
     private static final ResourceLocation IDENTITY_MODEL = ResourceLocation.fromNamespaceAndPath(
             Ae2bcMod.MOD_ID, "part/p2p/pp2p_unit_port_identity");
@@ -78,6 +80,7 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
     private final IItemHandler returnItemHandler = new GenericStackItemStorage(returnInventory);
     private final IFluidHandler returnFluidHandler = new GenericStackFluidStorage(returnInventory);
     private @Nullable UUID boundPatternP2PUnitId;
+    private @Nullable PatternP2PUnitManagerPart cachedManager;
     private short boundFrequency;
     private @Nullable PlacementStrategy placementStrategy;
     private @Nullable List<PickupStrategy> pickupStrategies;
@@ -188,14 +191,16 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
     private @Nullable PatternP2PUnitManagerPart getManager() {
         var grid = getMainNode().getGrid();
         if (grid == null || boundPatternP2PUnitId == null) {
+            cachedManager = null;
             return null;
         }
-        for (var candidate : grid.getMachines(PatternP2PUnitManagerPart.class)) {
-            if (boundPatternP2PUnitId.equals(candidate.getPatternP2PUnitId())) {
-                return candidate;
-            }
+        if (cachedManager != null && cachedManager.getMainNode().getGrid() == grid
+                && isBoundTo(cachedManager)) {
+            return cachedManager;
         }
-        return null;
+        cachedManager = null;
+        cachedManager = grid.getService(PatternP2PEnergyGridService.class).findManager(boundPatternP2PUnitId);
+        return cachedManager;
     }
 
     private boolean runPickup(PatternP2PUnitManagerPart manager) {
@@ -223,8 +228,12 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
         }
         boolean changed = false;
         var target = getBlockEntity().getBlockPos().relative(getSide());
+        List<PickupStrategy> strategies = getPickupStrategies();
+        for (PickupStrategy strategy : strategies) {
+            strategy.reset();
+        }
         for (ItemEntity entity : level.getEntitiesOfClass(ItemEntity.class, new AABB(target))) {
-            for (PickupStrategy strategy : getPickupStrategies()) {
+            for (PickupStrategy strategy : strategies) {
                 if (strategy.canPickUpEntity(entity)) {
                     changed |= strategy.pickUpEntity(grid.getEnergyService(),
                             (what, amount, mode) -> manager.getLogic()
@@ -310,9 +319,11 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
      * adjacent machine. It deliberately does not use the subnet's AE energy service.
      */
     public int receiveExternalEnergy(int maxReceive, boolean simulate) {
+        if (!type.acceptsExternalEnergy() || maxReceive <= 0) {
+            return 0;
+        }
         PatternP2PUnitManagerPart manager = getManager();
-        if (type != PatternP2PUnitPortType.ENERGY || maxReceive <= 0 || manager == null
-                || !manager.getLogic().isTaskOperational()) {
+        if (manager == null) {
             return 0;
         }
 
@@ -376,6 +387,7 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
     public void readFromNBT(CompoundTag data, HolderLookup.Provider registries) {
         super.readFromNBT(data, registries);
         boundPatternP2PUnitId = data.hasUUID("PatternP2PUnitId") ? data.getUUID("PatternP2PUnitId") : null;
+        cachedManager = null;
     }
 
     @Override
@@ -407,6 +419,11 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
             return true;
         }
         boundPatternP2PUnitId = patternP2PUnitId;
+        cachedManager = null;
+        var grid = getMainNode().getGrid();
+        if (grid != null) {
+            grid.getService(PatternP2PEnergyGridService.class).topologyChanged();
+        }
         getHost().markForSave();
         getHost().markForUpdate();
         wake();
@@ -419,12 +436,28 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
     }
 
     @Override
+    protected void onMainNodeStateChanged(IGridNodeListener.State reason) {
+        cachedManager = null;
+        super.onMainNodeStateChanged(reason);
+    }
+
+    @Override
+    public void removeFromWorld() {
+        cachedManager = null;
+        super.removeFromWorld();
+    }
+
+    @Override
     public void onNeighborChanged(net.minecraft.world.level.BlockGetter level,
                                   net.minecraft.core.BlockPos pos, net.minecraft.core.BlockPos neighbor) {
         placementStrategy = null;
         pickupStrategies = null;
         externalStrategies = null;
         energyTargetCache = null;
+        var grid = getMainNode().getGrid();
+        if (grid != null && type.acceptsExternalEnergy()) {
+            grid.getService(PatternP2PEnergyGridService.class).demandChanged();
+        }
         wake();
     }
 
@@ -474,6 +507,7 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
         UUID previous = boundPatternP2PUnitId;
         short previousFrequency = boundFrequency;
         boundPatternP2PUnitId = data.readBoolean() ? data.readUUID() : null;
+        cachedManager = null;
         boundFrequency = data.readShort();
         return changed || previousFrequency != boundFrequency
                 || !java.util.Objects.equals(previous, boundPatternP2PUnitId);

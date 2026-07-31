@@ -3,6 +3,7 @@ package cn.ae2bc;
 import appeng.api.AECapabilities;
 import appeng.api.parts.RegisterPartCapabilitiesEvent;
 import appeng.api.features.GridLinkables;
+import appeng.api.networking.GridServices;
 import appeng.api.upgrades.Upgrades;
 import appeng.core.definitions.AEItems;
 import appeng.items.tools.powered.WirelessTerminalItem;
@@ -12,6 +13,7 @@ import cn.ae2bc.part.PatternP2PTunnelEnergyPart;
 import cn.ae2bc.part.PatternP2PUnitPortPart;
 import cn.ae2bc.part.PatternP2PUnitManagerPart;
 import cn.ae2bc.item.WirelessComponentPlacerItem;
+import cn.ae2bc.logic.PatternP2PEnergyGridService;
 import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.registry.ModMenus;
 import com.mojang.logging.LogUtils;
@@ -30,6 +32,7 @@ public final class Ae2bcMod {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public Ae2bcMod(IEventBus modBus) {
+        GridServices.register(PatternP2PEnergyGridService.class, PatternP2PEnergyGridService.class);
         PatternP2PTunnelPart.registerModels();
         PatternP2PUnitManagerPart.registerModels();
         PatternP2PTunnelEnergyPart.registerModels();
