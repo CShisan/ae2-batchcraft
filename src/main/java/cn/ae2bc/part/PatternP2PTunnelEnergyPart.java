@@ -3,6 +3,7 @@ package cn.ae2bc.part;
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerUnit;
 import appeng.api.networking.IGridNode;
+import appeng.api.networking.IGridNodeListener;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
@@ -326,6 +327,18 @@ public final class PatternP2PTunnelEnergyPart extends EnergyAcceptorPart {
         var grid = getMainNode().getGrid();
         if (grid != null) {
             grid.getTickManager().alertDevice(getMainNode().getNode());
+        }
+    }
+
+    @Override
+    protected void onMainNodeStateChanged(IGridNodeListener.State reason) {
+        super.onMainNodeStateChanged(reason);
+        invalidateDemandCache();
+        if (pullEnabled) {
+            var grid = getMainNode().getGrid();
+            if (grid != null) {
+                grid.getTickManager().alertDevice(getMainNode().getNode());
+            }
         }
     }
 

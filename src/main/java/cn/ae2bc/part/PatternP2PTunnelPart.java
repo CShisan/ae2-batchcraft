@@ -9,6 +9,7 @@ import appeng.api.implementations.blockentities.PatternContainerGroup;
 import appeng.api.implementations.items.IMemoryCard;
 import appeng.api.implementations.items.MemoryCardMessages;
 import appeng.api.features.P2PTunnelAttunement;
+import appeng.api.networking.IGridNodeListener;
 import appeng.api.parts.IPartItem;
 import appeng.api.parts.IPartModel;
 import appeng.api.parts.PartHelper;
@@ -399,6 +400,25 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
             if (isStandardOutput()) {
                 energyService.synchronizeOutputGroupMode(this, null);
             }
+        }
+    }
+
+    @Override
+    protected void onMainNodeStateChanged(IGridNodeListener.State reason) {
+        super.onMainNodeStateChanged(reason);
+
+        // Endpoints can become active after the P2P topology was restored. Do not retain
+        // an availability result that was computed while the other endpoint was offline.
+        if (outputLogic != null) {
+            outputLogic.alertRetry();
+            notifyInputAvailabilityChanged();
+        } else if (inputLogic != null) {
+            inputLogic.invalidateOutputs();
+        }
+
+        var grid = getMainNode().getGrid();
+        if (grid != null) {
+            grid.getService(PatternP2PEnergyGridService.class).demandChanged();
         }
     }
 
