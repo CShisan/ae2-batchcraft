@@ -12,7 +12,7 @@ import cn.ae2bc.part.PatternP2PTunnelPart;
 import cn.ae2bc.part.PatternP2PTunnelEnergyPart;
 import cn.ae2bc.part.PatternP2PUnitPortPart;
 import cn.ae2bc.part.PatternP2PUnitManagerPart;
-import cn.ae2bc.item.ComponentPlacerItem;
+import cn.ae2bc.placer.ComponentPlacerItem;
 import cn.ae2bc.logic.PatternP2PEnergyGridService;
 import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.registry.ModMenus;

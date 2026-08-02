@@ -66,15 +66,15 @@ public record ComponentPlacerSelection(
     }
 
     public int sizeX() {
-        return second == null ? 0 : Math.abs(second.getX() - first.getX()) + 1;
+        return second == null ? 0 : saturatedSize(second.getX(), first.getX());
     }
 
     public int sizeY() {
-        return second == null ? 0 : Math.abs(second.getY() - first.getY()) + 1;
+        return second == null ? 0 : saturatedSize(second.getY(), first.getY());
     }
 
     public int sizeZ() {
-        return second == null ? 0 : Math.abs(second.getZ() - first.getZ()) + 1;
+        return second == null ? 0 : saturatedSize(second.getZ(), first.getZ());
     }
 
     public List<BlockPos> positions(ComponentPlacerSettings settings) {
@@ -94,6 +94,11 @@ public record ComponentPlacerSelection(
         return new ComponentSelectionGeometry(
                 first.getX(), first.getY(), first.getZ(),
                 second.getX(), second.getY(), second.getZ());
+    }
+
+    private static int saturatedSize(int first, int second) {
+        long size = Math.abs((long) first - second) + 1;
+        return (int) Math.min(Integer.MAX_VALUE, size);
     }
 
     public enum Validation {

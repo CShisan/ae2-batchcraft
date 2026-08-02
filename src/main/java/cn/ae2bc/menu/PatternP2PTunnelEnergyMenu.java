@@ -18,7 +18,7 @@ public final class PatternP2PTunnelEnergyMenu extends AEBaseMenu {
     public static final MenuType<PatternP2PTunnelEnergyMenu> TYPE = MenuTypeBuilder
             .create(PatternP2PTunnelEnergyMenu::new, PatternP2PTunnelEnergyPart.class)
             .withMenuTitle(part -> part.getPartItem().asItem().getDescription())
-            .buildUnregistered(ResourceLocation.fromNamespaceAndPath(
+            .build(ResourceLocation.fromNamespaceAndPath(
                     Ae2bcMod.MOD_ID, "pattern_p2p_tunnel_energy"));
 
     private final PatternP2PTunnelEnergyPart host;

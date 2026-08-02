@@ -1,7 +1,7 @@
 package cn.ae2bc.logic;
 
-import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
+import appeng.api.stacks.AEItemKey;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Objects;
@@ -9,7 +9,7 @@ import java.util.Set;
 
 /** Immutable server-side view of a pattern provider's product extraction settings. */
 public record ProductExtractionSettings(boolean enabled, int interval, int amount,
-                                        boolean whitelist, Set<AEItemKey> markers) {
+                                        boolean whitelist, Set<AEKey> markers) {
     public static final int DEFAULT_INTERVAL = 20;
     public static final int DEFAULT_AMOUNT = 64;
     public static final int MIN_INTERVAL = 1;
@@ -40,7 +40,7 @@ public record ProductExtractionSettings(boolean enabled, int interval, int amoun
         if (key == null) {
             return false;
         }
-        boolean marked = key instanceof AEItemKey itemKey && markers.contains(itemKey);
+        boolean marked = markers.contains(key);
         return whitelist ? marked : !marked;
     }
 }

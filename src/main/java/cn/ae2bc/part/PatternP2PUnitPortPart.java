@@ -418,9 +418,17 @@ public final class PatternP2PUnitPortPart extends AEBasePart implements IGridTic
             card.notifyUser(player, MemoryCardMessages.INVALID_MACHINE);
             return true;
         }
+        var grid = getMainNode().getGrid();
+        var currentManager = getManager();
+        var requestedManager = grid == null ? null
+                : grid.getService(PatternP2PEnergyGridService.class).findManager(patternP2PUnitId);
+        if ((currentManager != null && currentManager.isTaskActive())
+                || (requestedManager != null && requestedManager.isTaskActive())) {
+            card.notifyUser(player, MemoryCardMessages.INVALID_MACHINE);
+            return true;
+        }
         boundPatternP2PUnitId = patternP2PUnitId;
         cachedManager = null;
-        var grid = getMainNode().getGrid();
         if (grid != null) {
             grid.getService(PatternP2PEnergyGridService.class).topologyChanged();
         }

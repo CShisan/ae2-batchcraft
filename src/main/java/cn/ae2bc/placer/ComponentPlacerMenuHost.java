@@ -6,7 +6,6 @@ import appeng.items.contents.StackDependentSupplier;
 import appeng.menu.ISubMenu;
 import appeng.menu.locator.ItemMenuHostLocator;
 import appeng.util.inv.SupplierInternalInventory;
-import cn.ae2bc.item.ComponentPlacerItem;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.function.BiConsumer;

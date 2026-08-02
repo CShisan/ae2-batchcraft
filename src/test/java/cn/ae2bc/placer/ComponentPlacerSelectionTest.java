@@ -42,4 +42,15 @@ class ComponentPlacerSelectionTest {
         assertEquals(new ComponentSelectionGeometry.Position(6, -3, 4), positions.getFirst());
         assertEquals(new ComponentSelectionGeometry.Position(7, -3, 4), positions.get(1));
     }
+
+    @Test
+    void extremeCoordinatesCannotOverflowValidationOrOffsets() {
+        var selection = new ComponentSelectionGeometry(
+                Integer.MIN_VALUE, 0, 0, Integer.MAX_VALUE, 0, 0);
+        var offsetOverflow = new ComponentSelectionGeometry(
+                Integer.MAX_VALUE - 1, 0, 0, Integer.MAX_VALUE, 0, 0);
+
+        assertEquals(ComponentSelectionGeometry.Validation.TOO_LARGE, selection.validate());
+        assertEquals(0, offsetOverflow.positions(2, 0, 0).size());
+    }
 }

@@ -1,6 +1,6 @@
 package cn.ae2bc.client;
 
-import cn.ae2bc.item.ComponentPlacerItem;
+import cn.ae2bc.placer.ComponentPlacerItem;
 import cn.ae2bc.placer.ComponentPlacerSelection;
 import cn.ae2bc.placer.ComponentPlacerSettings;
 import cn.ae2bc.registry.ModContent;

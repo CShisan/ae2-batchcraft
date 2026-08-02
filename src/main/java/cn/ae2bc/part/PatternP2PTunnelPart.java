@@ -28,7 +28,7 @@ import appeng.parts.p2p.P2PTunnelPart;
 import appeng.util.InteractionUtil;
 import appeng.util.SettingsFrom;
 import cn.ae2bc.Ae2bcMod;
-import cn.ae2bc.item.ComponentPlacerItem;
+import cn.ae2bc.placer.ComponentPlacerItem;
 import cn.ae2bc.logic.PatternP2PTunnelInputLogic;
 import cn.ae2bc.logic.PatternP2PTunnelOutputLogic;
 import cn.ae2bc.logic.PatternP2PEnergyGridService;
@@ -496,6 +496,10 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
     }
 
     private void saveFrequencyToCard(ItemStack card, IMemoryCard memoryCard, Player player) {
+        if (hasActiveFrequencyTask()) {
+            memoryCard.notifyUser(player, MemoryCardMessages.INVALID_MACHINE);
+            return;
+        }
         var grid = getMainNode().getGrid();
         if (grid == null) {
             memoryCard.notifyUser(player, MemoryCardMessages.INVALID_MACHINE);
@@ -520,6 +524,10 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
     }
 
     private void loadFrequencyFromCard(ItemStack card, IMemoryCard memoryCard, Player player) {
+        if (hasActiveFrequencyTask()) {
+            memoryCard.notifyUser(player, MemoryCardMessages.INVALID_MACHINE);
+            return;
+        }
         var storedType = card.get(AEComponents.EXPORTED_P2P_TYPE);
         var storedFrequency = card.get(AEComponents.EXPORTED_P2P_FREQUENCY);
         if ((storedType != ModContent.PATTERN_P2P_TUNNEL_INPUT.get()
@@ -529,6 +537,20 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
         }
         importSettings(SettingsFrom.MEMORY_CARD, card.getComponents(), player);
         memoryCard.notifyUser(player, MemoryCardMessages.SETTINGS_LOADED);
+    }
+
+    private boolean hasActiveFrequencyTask() {
+        if (isTaskActive()) {
+            return true;
+        }
+        if (isOutput() || !hasConfiguredFrequency()) {
+            return false;
+        }
+        var grid = getMainNode().getGrid();
+        return grid != null && grid.getMachines(PatternP2PTunnelPart.class).stream()
+                .anyMatch(part -> part.isOutput()
+                        && part.getFrequency() == getFrequency()
+                        && part.isTaskActive());
     }
 
     private GenericInternalInventory findInputReturnInventory() {

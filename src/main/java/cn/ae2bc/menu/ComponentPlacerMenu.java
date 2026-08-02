@@ -18,7 +18,7 @@ import appeng.menu.slot.RestrictedInputSlot;
 import appeng.parts.p2p.P2PTunnelPart;
 import appeng.util.Platform;
 import cn.ae2bc.Ae2bcMod;
-import cn.ae2bc.item.ComponentPlacerItem;
+import cn.ae2bc.placer.ComponentPlacerItem;
 import cn.ae2bc.placer.ComponentPlacementService;
 import cn.ae2bc.placer.ComponentPlacerMenuHost;
 import cn.ae2bc.placer.ComponentPlacerSelection;
@@ -53,7 +53,7 @@ public final class ComponentPlacerMenu extends AEBaseMenu {
     public static final MenuType<ComponentPlacerMenu> TYPE = MenuTypeBuilder
             .create(ComponentPlacerMenu::new, ComponentPlacerMenuHost.class)
             .withMenuTitle(host -> host.getItemStack().getHoverName())
-            .buildUnregistered(ResourceLocation.fromNamespaceAndPath(
+            .build(ResourceLocation.fromNamespaceAndPath(
                     Ae2bcMod.MOD_ID, ModContent.COMPONENT_PLACER_ID));
 
     private final ComponentPlacerMenuHost host;

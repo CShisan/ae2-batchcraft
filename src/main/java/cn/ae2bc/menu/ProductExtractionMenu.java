@@ -27,7 +27,7 @@ public final class ProductExtractionMenu extends AEBaseMenu implements ISubMenu 
     public static final MenuType<ProductExtractionMenu> TYPE = MenuTypeBuilder
             .create(ProductExtractionMenu::new, PatternProviderLogicHost.class)
             .withMenuTitle(host -> host.getMainMenuIcon().getHoverName())
-            .buildUnregistered(ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "product_extraction"));
+            .build(ResourceLocation.fromNamespaceAndPath(Ae2bcMod.MOD_ID, "product_extraction"));
 
     private final PatternProviderLogicHost host;
 

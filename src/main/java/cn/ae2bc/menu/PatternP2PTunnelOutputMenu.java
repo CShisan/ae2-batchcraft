@@ -18,7 +18,7 @@ public final class PatternP2PTunnelOutputMenu extends AEBaseMenu {
     public static final MenuType<PatternP2PTunnelOutputMenu> TYPE = MenuTypeBuilder
             .create(PatternP2PTunnelOutputMenu::new, PatternP2PTunnelPart.class)
             .withMenuTitle(part -> part.getPartItem().asItem().getDescription())
-            .buildUnregistered(ResourceLocation.fromNamespaceAndPath(
+            .build(ResourceLocation.fromNamespaceAndPath(
                     Ae2bcMod.MOD_ID, "pattern_p2p_tunnel_output"));
 
     private final PatternP2PTunnelPart host;

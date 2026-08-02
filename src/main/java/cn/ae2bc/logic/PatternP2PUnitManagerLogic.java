@@ -42,6 +42,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
     private static final String REMAINING_PRIMARY = "PatternP2PUnitRemainingPrimary";
     private static final String PENDING_INPUTS = "PatternP2PUnitPendingInputs";
     private static final String OUTPUT_FORM = "OutputForm";
+    private static final String ACTIVE_RETURN_MODE = "PatternP2PUnitActiveReturnMode";
 
     private final IManagedGridNode mainNode;
     private final PatternP2PUnitManagerPart manager;
@@ -57,6 +58,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
     private EnergyDistributionMode energyDistributionMode = EnergyDistributionMode.EVEN;
     private @Nullable AEKey primaryKey;
     private long remainingPrimary;
+    private @Nullable ReturnMode activeReturnMode;
 
     public PatternP2PUnitManagerLogic(IManagedGridNode mainNode, PatternP2PUnitManagerPart manager) {
         this.mainNode = mainNode;
@@ -91,6 +93,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         taskActive = false;
         primaryKey = null;
         remainingPrimary = 0;
+        activeReturnMode = null;
         changed();
         wakePorts();
         manager.notifyInputAvailabilityChanged();
@@ -176,6 +179,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         taskActive = true;
         primaryKey = metadata.primaryOutput().what();
         remainingPrimary = metadata.primaryOutput().amount();
+        activeReturnMode = getEffectiveConfiguration().returnMode();
         pendingInputs.clear();
         pendingInputs.addAll(plan);
         changed();
@@ -285,7 +289,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         if (!isTaskOperational() || amount <= 0) {
             return 0;
         }
-        return getEffectiveConfiguration().returnMode() == ReturnMode.STRICT
+        return (activeReturnMode != null ? activeReturnMode : getEffectiveConfiguration().returnMode()) == ReturnMode.STRICT
                 && !declaredOutputs.containsKey(what) ? 0 : amount;
     }
 
@@ -333,6 +337,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         remainingPrimary = 0;
         declaredOutputs.clear();
         pendingInputs.clear();
+        activeReturnMode = null;
         changed();
         wakePorts();
         manager.notifyInputAvailabilityChanged();
@@ -381,6 +386,9 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         cachedMainConfiguration = PatternP2PUnitConfiguration.read(data.getCompound(MAIN_CONFIGURATION));
         cachedMainRevision = data.getLong(MAIN_REVISION);
         taskActive = data.getBoolean(TASK_ACTIVE);
+        activeReturnMode = data.contains(ACTIVE_RETURN_MODE, Tag.TAG_BYTE)
+                ? ReturnMode.fromId(data.getByte(ACTIVE_RETURN_MODE))
+                : taskActive ? getEffectiveConfiguration().returnMode() : null;
         declaredOutputs.clear();
         for (var stack : readStacks(data.getList(ACTIVE_OUTPUTS, Tag.TAG_COMPOUND), registries)) {
             declaredOutputs.merge(stack.what(), stack.amount(), PatternP2PUnitManagerLogic::saturatingAdd);
@@ -408,6 +416,11 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         data.put(MAIN_CONFIGURATION, cachedMainConfiguration.write());
         data.putLong(MAIN_REVISION, cachedMainRevision);
         data.putBoolean(TASK_ACTIVE, taskActive);
+        if (activeReturnMode != null) {
+            data.putByte(ACTIVE_RETURN_MODE, (byte) activeReturnMode.getId());
+        } else {
+            data.remove(ACTIVE_RETURN_MODE);
+        }
         List<GenericStack> outputs = declaredOutputs.entrySet().stream()
                 .map(entry -> new GenericStack(entry.getKey(), entry.getValue())).toList();
         data.put(ACTIVE_OUTPUTS, writeStacks(outputs, registries));
@@ -439,6 +452,7 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         taskActive = false;
         primaryKey = null;
         remainingPrimary = 0;
+        activeReturnMode = null;
     }
 
     private static List<GenericStack> readStacks(ListTag list, HolderLookup.Provider registries) {

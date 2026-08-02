@@ -7,6 +7,7 @@ modId = "ae2_batchcraft"
 version = "${file.jarVersion}"
 displayName = "AE2 BatchCraft"
 authors = "AE2BC"
+logoFile = "icon.png"
 description = '''
 AE2 BatchCraft distributes processing-pattern jobs from a subnet input across channel-free outputs.
 '''
@@ -45,6 +46,6 @@ side = "BOTH"
 [[dependencies.ae2_batchcraft]]
 modId = "guideme"
 type = "optional"
-versionRange = "[2.5.1,)"
+versionRange = "[21.1.16,)"
 ordering = "AFTER"
 side = "CLIENT"

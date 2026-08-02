@@ -1,7 +1,7 @@
 package cn.ae2bc.mixin;
 
 import appeng.parts.p2p.P2PTunnelPart;
-import cn.ae2bc.item.ComponentPlacerItem;
+import cn.ae2bc.placer.ComponentPlacerItem;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;

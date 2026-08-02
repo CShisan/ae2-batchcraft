@@ -6,7 +6,6 @@ import appeng.client.gui.widgets.ActionButton;
 import appeng.menu.implementations.PatternProviderMenu;
 import cn.ae2bc.extension.PatternProviderMenuExtension;
 import net.minecraft.network.chat.Component;
-import net.minecraft.client.gui.components.Tooltip;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,9 +23,10 @@ public abstract class PatternProviderScreenMixin {
         ae2bc$productExtractionButton = new ActionButton(ActionItems.COG,
                 () -> ((PatternProviderMenuExtension) menu).ae2bc$openProductExtractionSettings());
         ae2bc$productExtractionButton.setMessage(Component.translatable(
-                "gui.ae2_batchcraft.product_extraction.open"));
-        ae2bc$productExtractionButton.setTooltip(Tooltip.create(Component.translatable(
-                "gui.ae2_batchcraft.product_extraction.open.tooltip")));
+                        "gui.ae2_batchcraft.product_extraction.open")
+                .append("\n")
+                .append(Component.translatable(
+                        "gui.ae2_batchcraft.product_extraction.open.tooltip")));
         ((AEBaseScreenAccessor) screen).ae2bc$addToLeftToolbar(ae2bc$productExtractionButton);
     }
 

@@ -6,7 +6,7 @@ import appeng.api.upgrades.Upgrades;
 import appeng.items.parts.PartItem;
 import appeng.items.parts.ColoredPartItem;
 import appeng.api.util.AEColor;
-import cn.ae2bc.item.ComponentPlacerItem;
+import cn.ae2bc.placer.ComponentPlacerItem;
 import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.part.PatternP2PTunnelPart;
 import cn.ae2bc.part.PatternP2PTunnelEnergyPart;

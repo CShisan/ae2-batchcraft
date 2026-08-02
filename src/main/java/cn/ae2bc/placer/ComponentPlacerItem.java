@@ -1,4 +1,4 @@
-package cn.ae2bc.item;
+package cn.ae2bc.placer;
 
 import appeng.api.implementations.parts.ICablePart;
 import appeng.api.parts.BusSupport;
@@ -13,9 +13,6 @@ import appeng.util.inv.AppEngInternalInventory;
 import appeng.util.inv.InternalInventoryHost;
 import appeng.util.inv.filter.IAEItemFilter;
 import cn.ae2bc.menu.ComponentPlacerMenu;
-import cn.ae2bc.placer.ComponentPlacerMenuHost;
-import cn.ae2bc.placer.ComponentPlacerSelection;
-import cn.ae2bc.placer.ComponentPlacerSettings;
 import cn.ae2bc.registry.ModContent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;

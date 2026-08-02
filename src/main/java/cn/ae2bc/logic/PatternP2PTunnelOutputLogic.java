@@ -22,7 +22,6 @@ import appeng.core.settings.TickRates;
 import appeng.crafting.pattern.AEProcessingPattern;
 import appeng.me.helpers.MachineSource;
 import appeng.parts.automation.StackWorldBehaviors;
-import appeng.util.Platform;
 import cn.ae2bc.Ae2bcMod;
 import cn.ae2bc.part.PatternP2PTunnelPart;
 import cn.ae2bc.pattern.InputDirectionData;
@@ -34,8 +33,6 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -60,14 +57,15 @@ public final class PatternP2PTunnelOutputLogic {
     private static final String ACTIVE_TASK_COUNT = "ActiveTaskCount";
     private static final String SYNC_INPUT_SETTINGS = "SyncInputSettings";
     private static final String ENERGY_DISTRIBUTION_MODE = "EnergyDistributionMode";
+    private static final String PRODUCT_EXTRACTION_RECOVERY = "ProductExtractionRecovery";
 
     private final IManagedGridNode mainNode;
     private final PatternP2PTunnelPart output;
     private final IActionSource retryActionSource;
     private final List<PendingInput> pendingInputs = new ArrayList<>();
+    private final List<GenericStack> productExtractionRecovery = new ArrayList<>();
     private final ReturnBatchTracker<AEKey, AEItemKey> returnBatch = new ReturnBatchTracker<>();
     private @Nullable TargetCache targetCache;
-    private @Nullable BlockCapabilityCache<IItemHandler, Direction> productExtractionTargetCache;
     private long lastProductExtractionTick = Long.MIN_VALUE;
     private ReturnMode returnMode = ReturnMode.UNBLOCKED;
     private boolean syncInputSettings = true;
@@ -463,6 +461,14 @@ public final class PatternP2PTunnelOutputLogic {
                 pendingInputs.add(new PendingInput(stack, face));
             }
         }
+        productExtractionRecovery.clear();
+        var recovery = data.getList(PRODUCT_EXTRACTION_RECOVERY, Tag.TAG_COMPOUND);
+        for (int i = 0; i < recovery.size(); i++) {
+            GenericStack stack = GenericStack.readTag(registries, recovery.getCompound(i));
+            if (stack != null && stack.amount() > 0) {
+                productExtractionRecovery.add(stack);
+            }
+        }
     }
 
     public void writeToNBT(CompoundTag data, HolderLookup.Provider registries) {
@@ -500,6 +506,11 @@ public final class PatternP2PTunnelOutputLogic {
             list.add(entry);
         }
         data.put(PENDING_INPUTS, list);
+        ListTag recovery = new ListTag();
+        for (GenericStack stack : productExtractionRecovery) {
+            recovery.add(GenericStack.writeTag(registries, stack));
+        }
+        data.put(PRODUCT_EXTRACTION_RECOVERY, recovery);
     }
 
     public void addDrops(List<net.minecraft.world.item.ItemStack> drops) {
@@ -507,10 +518,14 @@ public final class PatternP2PTunnelOutputLogic {
             GenericStack stack = pending.stack();
             stack.what().addDrops(stack.amount(), drops, output.getLevel(), output.getBlockEntity().getBlockPos());
         }
+        for (GenericStack stack : productExtractionRecovery) {
+            stack.what().addDrops(stack.amount(), drops, output.getLevel(), output.getBlockEntity().getBlockPos());
+        }
     }
 
     public void clearContent() {
         pendingInputs.clear();
+        productExtractionRecovery.clear();
         returnBatch.clear();
     }
 
@@ -559,10 +574,14 @@ public final class PatternP2PTunnelOutputLogic {
     }
 
     private ProductExtractionTickState tickProductExtraction() {
-        var settings = output.getProductExtractionSettingsFromInput();
-        if (settings == null || !settings.enabled() || !mainNode.isActive()
-                || !(output.getLevel() instanceof ServerLevel level)) {
+        if (!mainNode.isActive() || !(output.getLevel() instanceof ServerLevel level)) {
             return ProductExtractionTickState.DISABLED;
+        }
+        drainProductExtractionRecovery();
+        var settings = output.getProductExtractionSettingsFromInput();
+        if (settings == null || !settings.enabled()) {
+            return productExtractionRecovery.isEmpty()
+                    ? ProductExtractionTickState.DISABLED : ProductExtractionTickState.WAITING;
         }
         long tick = level.getGameTime();
         if (lastProductExtractionTick != Long.MIN_VALUE
@@ -576,19 +595,49 @@ public final class PatternP2PTunnelOutputLogic {
         }
         var targetPos = output.getBlockEntity().getBlockPos().relative(side);
         Direction targetSide = side.getOpposite();
-        if (productExtractionTargetCache == null
-                || productExtractionTargetCache.level() != level
-                || !productExtractionTargetCache.pos().equals(targetPos)
-                || productExtractionTargetCache.context() != targetSide) {
-            productExtractionTargetCache = BlockCapabilityCache.create(
-                    Capabilities.ItemHandler.BLOCK, level, targetPos, targetSide);
-        }
-        var source = productExtractionTargetCache.getCapability();
-        if (source != null) {
-            ProductExtractor.extract(source, output.getReturnInventory(), settings,
-                    stack -> Platform.spawnDrops(level, targetPos, List.of(stack)));
-        }
+        var sources = getTargetCache(level, targetPos).get(targetSide).resolveStorages(this::alertRetry);
+        ProductExtractor.extract(sources, output.getReturnInventory(), settings, retryActionSource,
+                this::queueProductExtractionRecovery);
         return ProductExtractionTickState.ATTEMPTED;
+    }
+
+    private void queueProductExtractionRecovery(GenericStack stack) {
+        for (int i = 0; i < productExtractionRecovery.size(); i++) {
+            GenericStack existing = productExtractionRecovery.get(i);
+            if (existing.what().equals(stack.what())) {
+                productExtractionRecovery.set(i,
+                        new GenericStack(existing.what(), saturatingAdd(existing.amount(), stack.amount())));
+                output.getHost().markForSave();
+                return;
+            }
+        }
+        productExtractionRecovery.add(stack);
+        output.getHost().markForSave();
+    }
+
+    private void drainProductExtractionRecovery() {
+        boolean changed = false;
+        RemoteReturnInventory destination = output.getReturnInventory();
+        destination.setProductExtractionBypass(true);
+        try {
+            for (var iterator = productExtractionRecovery.listIterator(); iterator.hasNext(); ) {
+                GenericStack stack = iterator.next();
+                long inserted = destination.insert(
+                        stack.what(), stack.amount(), Actionable.MODULATE, retryActionSource);
+                if (inserted >= stack.amount()) {
+                    iterator.remove();
+                    changed = true;
+                } else if (inserted > 0) {
+                    iterator.set(new GenericStack(stack.what(), stack.amount() - inserted));
+                    changed = true;
+                }
+            }
+        } finally {
+            destination.setProductExtractionBypass(false);
+        }
+        if (changed) {
+            output.getHost().markForSave();
+        }
     }
 
     private record RoutedInput(GenericStack stack, @Nullable Direction face) {

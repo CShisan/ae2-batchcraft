@@ -49,7 +49,8 @@ public abstract class GuideMeMixin {
         try (var input = resource.open()) {
             Ae2bcMod.LOGGER.info("Using localized GuideMe page {} for language {} from {}",
                     pageId, language, localizedResource);
-            cir.setReturnValue(PageCompiler.parse(resource.sourcePackId(), pageId, input));
+            cir.setReturnValue(PageCompiler.parse(
+                    resource.sourcePackId(), normalizedLanguage, pageId, input));
         } catch (Exception e) {
             Ae2bcMod.LOGGER.warn("Failed to load GuideMe localized guide resource {}", localizedResource, e);
         }

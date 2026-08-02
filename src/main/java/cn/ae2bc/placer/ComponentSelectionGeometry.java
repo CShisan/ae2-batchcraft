@@ -6,7 +6,7 @@ import java.util.List;
 /** Pure coordinate logic for placer selections, kept independent of Minecraft for unit testing. */
 public record ComponentSelectionGeometry(int firstX, int firstY, int firstZ, int secondX, int secondY, int secondZ) {
     public static final int MAX_AXIS_SIZE = 16;
-    public static final int MAX_TARGETS = MAX_AXIS_SIZE * MAX_AXIS_SIZE;
+    public static final long MAX_TARGETS = (long) MAX_AXIS_SIZE * MAX_AXIS_SIZE;
 
     public Validation validate() {
         int varyingAxes = 0;
@@ -29,19 +29,19 @@ public record ComponentSelectionGeometry(int firstX, int firstY, int firstZ, int
         return Validation.VALID;
     }
 
-    public int sizeX() {
-        return Math.abs(secondX - firstX) + 1;
+    public long sizeX() {
+        return Math.abs((long) secondX - firstX) + 1;
     }
 
-    public int sizeY() {
-        return Math.abs(secondY - firstY) + 1;
+    public long sizeY() {
+        return Math.abs((long) secondY - firstY) + 1;
     }
 
-    public int sizeZ() {
-        return Math.abs(secondZ - firstZ) + 1;
+    public long sizeZ() {
+        return Math.abs((long) secondZ - firstZ) + 1;
     }
 
-    public int targetCount() {
+    public long targetCount() {
         return sizeX() * sizeY() * sizeZ();
     }
 
@@ -50,17 +50,22 @@ public record ComponentSelectionGeometry(int firstX, int firstY, int firstZ, int
             return List.of();
         }
 
-        int minX = Math.min(firstX, secondX) + offsetX;
-        int minY = Math.min(firstY, secondY) + offsetY;
-        int minZ = Math.min(firstZ, secondZ) + offsetZ;
-        int maxX = Math.max(firstX, secondX) + offsetX;
-        int maxY = Math.max(firstY, secondY) + offsetY;
-        int maxZ = Math.max(firstZ, secondZ) + offsetZ;
-        List<Position> result = new ArrayList<>(targetCount());
-        for (int y = minY; y <= maxY; y++) {
-            for (int z = minZ; z <= maxZ; z++) {
-                for (int x = minX; x <= maxX; x++) {
-                    result.add(new Position(x, y, z));
+        long minX = (long) Math.min(firstX, secondX) + offsetX;
+        long minY = (long) Math.min(firstY, secondY) + offsetY;
+        long minZ = (long) Math.min(firstZ, secondZ) + offsetZ;
+        long maxX = (long) Math.max(firstX, secondX) + offsetX;
+        long maxY = (long) Math.max(firstY, secondY) + offsetY;
+        long maxZ = (long) Math.max(firstZ, secondZ) + offsetZ;
+        if (minX < Integer.MIN_VALUE || maxX > Integer.MAX_VALUE
+                || minY < Integer.MIN_VALUE || maxY > Integer.MAX_VALUE
+                || minZ < Integer.MIN_VALUE || maxZ > Integer.MAX_VALUE) {
+            return List.of();
+        }
+        List<Position> result = new ArrayList<>((int) targetCount());
+        for (long y = minY; y <= maxY; y++) {
+            for (long z = minZ; z <= maxZ; z++) {
+                for (long x = minX; x <= maxX; x++) {
+                    result.add(new Position((int) x, (int) y, (int) z));
                 }
             }
         }

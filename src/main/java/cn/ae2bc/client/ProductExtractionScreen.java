@@ -14,6 +14,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 public final class ProductExtractionScreen extends AEBaseScreen<ProductExtractionMenu> {
     private ValidatedIntegerField intervalInput;
@@ -70,6 +73,23 @@ public final class ProductExtractionScreen extends AEBaseScreen<ProductExtractio
     public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
         guiGraphics.hLine(7, imageWidth - 8, 17, 0xFF808080);
         guiGraphics.hLine(7, imageWidth - 8, 18, 0xFFFFFFFF);
+    }
+
+    @Override
+    protected void renderSlotContents(GuiGraphics guiGraphics, ItemStack stack, Slot slot,
+                                      @Nullable String countString) {
+        if (!menu.getSlots(ProductExtractionMenu.MARKER_SLOT).contains(slot)) {
+            super.renderSlotContents(guiGraphics, stack, slot, countString);
+            return;
+        }
+
+        int seed = slot.x + slot.y * imageWidth;
+        if (slot.isFake()) {
+            guiGraphics.renderFakeItem(stack, slot.x, slot.y, seed);
+        } else {
+            guiGraphics.renderItem(stack, slot.x, slot.y, seed);
+        }
+        guiGraphics.renderItemDecorations(font, stack, slot.x, slot.y, "");
     }
 
     @Override

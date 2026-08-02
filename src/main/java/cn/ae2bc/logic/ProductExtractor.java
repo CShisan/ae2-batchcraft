@@ -2,104 +2,113 @@ package cn.ae2bc.logic;
 
 import appeng.api.behaviors.GenericInternalInventory;
 import appeng.api.config.Actionable;
-import appeng.api.stacks.AEItemKey;
+import appeng.api.networking.security.IActionSource;
+import appeng.api.stacks.AEKey;
+import appeng.api.stacks.AEKeyType;
+import appeng.api.stacks.GenericStack;
+import appeng.api.stacks.KeyCounter;
+import appeng.api.storage.MEStorage;
 import cn.ae2bc.Ae2bcMod;
-import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
 
+import java.util.Map;
 import java.util.Objects;
 
-/** Moves filtered item stacks into an AE2 return inventory without extracting items that cannot be stored. */
+/** Moves filtered AE resources into a return inventory without extracting resources that cannot be stored. */
 public final class ProductExtractor {
     @FunctionalInterface
     public interface OverflowHandler {
-        void recover(ItemStack stack);
+        void recover(GenericStack stack);
     }
 
     private ProductExtractor() {
     }
 
-    public static int extract(IItemHandler source, GenericInternalInventory destination,
-                              ProductExtractionSettings settings, OverflowHandler overflowHandler) {
+    public static int extract(Map<AEKeyType, MEStorage> sources, MEStorage destination,
+                              ProductExtractionSettings settings, IActionSource actionSource,
+                              OverflowHandler overflowHandler) {
         Objects.requireNonNull(overflowHandler, "overflowHandler");
-        if (source == null || destination == null || !destination.canInsert() || !settings.enabled()) {
+        if (sources == null || destination == null || !(destination instanceof GenericInternalInventory internal)
+                || !internal.canInsert()
+                || !settings.enabled() || actionSource == null) {
             return 0;
         }
 
         int moved = 0;
-        destination.beginBatch();
+        internal.beginBatch();
         try {
-            for (int slot = 0; slot < source.getSlots() && moved < settings.amount(); slot++) {
-                int remaining = settings.amount() - moved;
-                ItemStack simulated = source.extractItem(slot, remaining, true);
-                if (simulated.isEmpty() || !settings.allows(simulated)) {
+            for (var sourceEntry : sources.entrySet()) {
+                if (moved >= settings.amount()) {
+                    break;
+                }
+                if (sourceEntry.getValue() == null) {
                     continue;
                 }
-                AEItemKey key = AEItemKey.of(simulated);
-                if (key == null) {
-                    continue;
-                }
+                KeyCounter available = sourceEntry.getValue().getAvailableStacks();
+                for (var entry : available) {
+                    if (moved >= settings.amount()) {
+                        break;
+                    }
+                    AEKey key = entry.getKey();
+                    if (!settings.allows(key) || key.getType() != sourceEntry.getKey()) {
+                        continue;
+                    }
+                    long unit = Math.max(1L, key.getAmountPerOperation());
+                    long remainingOperations = settings.amount() - moved;
+                    long requested = Math.min(entry.getLongValue(),
+                            saturatingMultiply(remainingOperations, unit));
+                    if (requested <= 0) {
+                        continue;
+                    }
 
-                int accepted = (int) Math.min(simulated.getCount(), insert(destination, key,
-                        Math.min(simulated.getCount(), remaining), Actionable.SIMULATE));
-                if (accepted <= 0) {
-                    continue;
-                }
+                    long accepted = Math.max(0, destination.insert(key, requested,
+                            Actionable.SIMULATE, actionSource));
+                    if (accepted <= 0) {
+                        continue;
+                    }
+                    long extracted = Math.max(0, sourceEntry.getValue().extract(
+                            key, Math.min(requested, accepted), Actionable.MODULATE, actionSource));
+                    if (extracted <= 0) {
+                        continue;
+                    }
+                    long inserted = Math.clamp(destination.insert(key, extracted,
+                            Actionable.MODULATE, actionSource), 0, extracted);
+                    moved = Math.min(settings.amount(), moved + operationsFor(inserted, unit));
 
-                ItemStack extracted = source.extractItem(slot, accepted, false);
-                if (extracted.isEmpty()) {
-                    continue;
-                }
-                AEItemKey extractedKey = AEItemKey.of(extracted);
-                int insertable = extractedKey == null ? 0 : (int) Math.min(extracted.getCount(),
-                        insert(destination, extractedKey, extracted.getCount(), Actionable.SIMULATE));
-                int inserted = insertable <= 0 ? 0 : (int) insert(
-                        destination, extractedKey, insertable, Actionable.MODULATE);
-                ExtractionRecoveryPlan recovery = ExtractionRecoveryPlan.create(extracted.getCount(), inserted);
-                moved += recovery.insertedCount();
-
-                if (recovery.remainderCount() > 0) {
-                    ItemStack remainder = reinsert(source, slot,
-                            extracted.copyWithCount(recovery.remainderCount()));
-                    if (!remainder.isEmpty()) {
-                        Ae2bcMod.LOGGER.error("Item handler rejected {} after an inconsistent extraction simulation",
-                                remainder);
-                        overflowHandler.recover(remainder.copy());
+                    long remainder = extracted - inserted;
+                    if (remainder > 0) {
+                        long restored = Math.max(0, sourceEntry.getValue().insert(
+                                key, remainder, Actionable.MODULATE, actionSource));
+                        long unrecovered = remainder - Math.min(restored, remainder);
+                        if (unrecovered > 0) {
+                            Ae2bcMod.LOGGER.error(
+                                    "Storage rejected {} units of {} after an inconsistent extraction simulation",
+                                    unrecovered, key);
+                            overflowHandler.recover(new GenericStack(key, unrecovered));
+                        }
                     }
                 }
             }
         } finally {
-            destination.endBatch();
+            internal.endBatch();
         }
         return moved;
     }
 
-    public static int extract(IItemHandler source, RemoteReturnInventory destination,
-                              ProductExtractionSettings settings, OverflowHandler overflowHandler) {
-        destination.setProductExtractionBypass(true);
-        try {
-            return extract(source, (GenericInternalInventory) destination, settings, overflowHandler);
-        } finally {
-            destination.setProductExtractionBypass(false);
-        }
+    public static int extract(Map<AEKeyType, MEStorage> sources, RemoteReturnInventory destination,
+                              ProductExtractionSettings settings, IActionSource actionSource,
+                              OverflowHandler overflowHandler) {
+        return extract(sources, (MEStorage) destination, settings, actionSource, overflowHandler);
     }
 
-    private static long insert(GenericInternalInventory destination, AEItemKey key, int amount,
-                               Actionable mode) {
-        long inserted = 0;
-        for (int slot = 0; slot < destination.size() && inserted < amount; slot++) {
-            inserted += destination.insert(slot, key, amount - inserted, mode);
+    private static int operationsFor(long amount, long unit) {
+        if (amount <= 0) {
+            return 0;
         }
-        return inserted;
+        long operations = (amount - 1) / unit + 1;
+        return (int) Math.min(Integer.MAX_VALUE, operations);
     }
 
-    private static ItemStack reinsert(IItemHandler source, int preferredSlot, ItemStack stack) {
-        ItemStack remainder = source.insertItem(preferredSlot, stack, false);
-        for (int slot = 0; slot < source.getSlots() && !remainder.isEmpty(); slot++) {
-            if (slot != preferredSlot) {
-                remainder = source.insertItem(slot, remainder, false);
-            }
-        }
-        return remainder;
+    private static long saturatingMultiply(long left, long right) {
+        return left > Long.MAX_VALUE / right ? Long.MAX_VALUE : left * right;
     }
 }

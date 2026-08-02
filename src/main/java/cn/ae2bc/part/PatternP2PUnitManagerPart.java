@@ -96,6 +96,9 @@ public final class PatternP2PUnitManagerPart extends CablePart implements Patter
     }
 
     public void setFrequency(short frequency) {
+        if (logic.hasTaskState()) {
+            return;
+        }
         if (this.frequency == frequency) {
             return;
         }
@@ -233,8 +236,12 @@ public final class PatternP2PUnitManagerPart extends CablePart implements Patter
                     && !ModContent.isPatternP2PUnitManagerItem(storedType)) || storedFrequency == null) {
                 memoryCard.notifyUser(player, MemoryCardMessages.INVALID_MACHINE);
             } else {
-                setFrequency(storedFrequency);
-                memoryCard.notifyUser(player, MemoryCardMessages.SETTINGS_LOADED);
+                if (logic.hasTaskState()) {
+                    memoryCard.notifyUser(player, MemoryCardMessages.INVALID_MACHINE);
+                } else {
+                    setFrequency(storedFrequency);
+                    memoryCard.notifyUser(player, MemoryCardMessages.SETTINGS_LOADED);
+                }
             }
         }
         return true;

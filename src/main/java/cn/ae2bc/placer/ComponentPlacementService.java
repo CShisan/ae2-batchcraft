@@ -10,7 +10,6 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.StorageHelper;
 import appeng.me.helpers.PlayerSource;
 import appeng.me.service.P2PService;
-import cn.ae2bc.item.ComponentPlacerItem;
 import cn.ae2bc.registry.ModContent;
 import appeng.parts.p2p.P2PTunnelPart;
 import net.minecraft.core.BlockPos;
@@ -19,6 +18,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.util.BlockSnapshot;
+import net.neoforged.neoforge.event.level.BlockEvent;
 
 import java.util.Objects;
 
@@ -43,6 +45,9 @@ public final class ComponentPlacementService {
         if (selection == null || !selection.dimension().equals(level.dimension().location())
                 || !ComponentPlacerItem.isUsableCable(cable)
                 || !ComponentPlacerItem.isUsablePart(part)) {
+            return Result.empty();
+        }
+        if (selection.validate() != ComponentPlacerSelection.Validation.VALID) {
             return Result.empty();
         }
         var positions = selection.positions(settings);
@@ -108,6 +113,7 @@ public final class ComponentPlacementService {
     private static boolean placeAt(ServerLevel level, ServerPlayer player, BlockPos pos,
                                     IPartItem<?> cableItem, IPartItem<?> partItem, Direction direction,
                                    short frequency) {
+        BlockSnapshot snapshot = BlockSnapshot.create(level.dimension(), level, pos);
         IPartHost host = PartHelper.getOrPlacePartHost(level, pos, false, player);
         if (host == null) {
             return false;
@@ -121,6 +127,13 @@ public final class ComponentPlacementService {
 
         IPart placedPart = addPart(host, partItem, direction, player);
         if (placedPart == null || !isUnobstructed(level, pos, host)) {
+            removePart(host, placedPart);
+            removePart(host, cablePart);
+            return false;
+        }
+        var placeEvent = new BlockEvent.EntityPlaceEvent(snapshot, snapshot.getState(), player);
+        NeoForge.EVENT_BUS.post(placeEvent);
+        if (placeEvent.isCanceled()) {
             removePart(host, placedPart);
             removePart(host, cablePart);
             return false;
