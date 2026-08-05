@@ -15,4 +15,9 @@ class PatternP2PUnitPortTypeTest {
 
         assertEquals(java.util.List.of(PatternP2PUnitPortType.ENERGY), accepted);
     }
+
+    @Test
+    void extractionHasItsOwnPortType() {
+        assertEquals("extract", PatternP2PUnitPortType.EXTRACT.getSerializedName());
+    }
 }

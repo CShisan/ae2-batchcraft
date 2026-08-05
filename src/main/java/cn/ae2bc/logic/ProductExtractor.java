@@ -4,13 +4,12 @@ import appeng.api.behaviors.GenericInternalInventory;
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.AEKey;
-import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import cn.ae2bc.Ae2bcMod;
 
-import java.util.Map;
+import java.util.Collection;
 import java.util.Objects;
 
 /** Moves filtered AE resources into a return inventory without extracting resources that cannot be stored. */
@@ -23,7 +22,7 @@ public final class ProductExtractor {
     private ProductExtractor() {
     }
 
-    public static int extract(Map<AEKeyType, MEStorage> sources, MEStorage destination,
+    public static int extract(Collection<ExtractionSource> sources, MEStorage destination,
                               ProductExtractionSettings settings, IActionSource actionSource,
                               OverflowHandler overflowHandler) {
         Objects.requireNonNull(overflowHandler, "overflowHandler");
@@ -36,20 +35,17 @@ public final class ProductExtractor {
         int moved = 0;
         internal.beginBatch();
         try {
-            for (var sourceEntry : sources.entrySet()) {
+            for (var source : sources) {
                 if (moved >= settings.amount()) {
                     break;
                 }
-                if (sourceEntry.getValue() == null) {
-                    continue;
-                }
-                KeyCounter available = sourceEntry.getValue().getAvailableStacks();
+                KeyCounter available = source.storage().getAvailableStacks();
                 for (var entry : available) {
                     if (moved >= settings.amount()) {
                         break;
                     }
                     AEKey key = entry.getKey();
-                    if (!settings.allows(key) || key.getType() != sourceEntry.getKey()) {
+                    if (!settings.allows(key) || !source.supportedTypes().contains(key.getType())) {
                         continue;
                     }
                     long unit = Math.max(1L, key.getAmountPerOperation());
@@ -65,7 +61,7 @@ public final class ProductExtractor {
                     if (accepted <= 0) {
                         continue;
                     }
-                    long extracted = Math.max(0, sourceEntry.getValue().extract(
+                    long extracted = Math.max(0, source.storage().extract(
                             key, Math.min(requested, accepted), Actionable.MODULATE, actionSource));
                     if (extracted <= 0) {
                         continue;
@@ -76,7 +72,7 @@ public final class ProductExtractor {
 
                     long remainder = extracted - inserted;
                     if (remainder > 0) {
-                        long restored = Math.max(0, sourceEntry.getValue().insert(
+                        long restored = Math.max(0, source.storage().insert(
                                 key, remainder, Actionable.MODULATE, actionSource));
                         long unrecovered = remainder - Math.min(restored, remainder);
                         if (unrecovered > 0) {
@@ -94,7 +90,7 @@ public final class ProductExtractor {
         return moved;
     }
 
-    public static int extract(Map<AEKeyType, MEStorage> sources, RemoteReturnInventory destination,
+    public static int extract(Collection<ExtractionSource> sources, RemoteReturnInventory destination,
                               ProductExtractionSettings settings, IActionSource actionSource,
                               OverflowHandler overflowHandler) {
         return extract(sources, (MEStorage) destination, settings, actionSource, overflowHandler);

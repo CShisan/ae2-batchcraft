@@ -9,12 +9,12 @@
   },
   "slots": {
     "AE2_BATCHCRAFT_CABLE_MARKER": {
-      "left": 26,
+      "left": 40,
       "top": 22,
       "grid": "HORIZONTAL"
     },
     "AE2_BATCHCRAFT_PART_MARKER": {
-      "left": 78,
+      "left": 88,
       "top": 22,
       "grid": "HORIZONTAL"
     },

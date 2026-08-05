@@ -10,9 +10,10 @@
     "P2PTunnelPartMixin",
     "PatternProviderLogicAccessor",
     "PatternProviderLogicMixin",
+    "PatternProviderReturnInventoryMixin",
     "PatternProviderMenuMixin",
-    "PatternProviderTickerMixin",
     "PatternEncodingLogicMixin",
+    "PatternEncodingTermMenuEncodeMixin",
     "PatternEncodingTermMenuMixin"
   ],
   "client": [

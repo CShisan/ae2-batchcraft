@@ -29,6 +29,8 @@ class GuidePageResourceTest {
             "data/ae2_batchcraft/recipe/pattern_p2p_tunnel_energy.json";
     private static final String PRODUCT_EXTRACTION_RECIPE =
             "data/ae2_batchcraft/recipe/product_extraction_card.json";
+    private static final String UNIT_EXTRACTION_RECIPE =
+            "data/ae2_batchcraft/recipe/pattern_p2p_unit_port_extract.json";
     private static final String PLACER_SCREEN =
             "assets/ae2/screens/ae2_batchcraft/component_placer.json";
     private static final String ENERGY_TUNNEL_SCREEN =
@@ -132,6 +134,18 @@ class GuidePageResourceTest {
         assertTrue(screen.contains("\"intervalReset\""));
         assertTrue(screen.contains("\"amountReset\""));
         assertTrue(screen.contains("\"modeToggle\""));
+    }
+
+    @Test
+    void unitExtractionPortHasARecipeAndGuideEntry() throws Exception {
+        String recipe = readText(UNIT_EXTRACTION_RECIPE);
+        assertTrue(recipe.contains("\"item\":\"ae2:import_bus\""));
+        assertTrue(recipe.contains("\"item\":\"ae2:engineering_processor\""));
+        assertTrue(recipe.contains("\"id\":\"ae2_batchcraft:pattern_p2p_unit_port_extract\""));
+
+        String guide = readText(ENGLISH_GUIDE);
+        assertTrue(guide.contains("- ae2_batchcraft:pattern_p2p_unit_port_extract"));
+        assertTrue(guide.contains("#### Extraction Port"));
     }
 
     @Test

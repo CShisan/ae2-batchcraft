@@ -10,8 +10,9 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.StorageHelper;
 import appeng.me.helpers.PlayerSource;
 import appeng.me.service.P2PService;
-import cn.ae2bc.registry.ModContent;
 import appeng.parts.p2p.P2PTunnelPart;
+import cn.ae2bc.part.PatternP2PTunnelPart;
+import cn.ae2bc.registry.ModContent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -138,7 +139,9 @@ public final class ComponentPlacementService {
             removePart(host, cablePart);
             return false;
         }
-        if (frequency != 0 && placedPart instanceof P2PTunnelPart<?> tunnel) {
+        if (frequency != 0 && placedPart instanceof P2PTunnelPart<?> tunnel
+                && (!(tunnel instanceof PatternP2PTunnelPart patternTunnel)
+                || patternTunnel.isOutput())) {
             var grid = tunnel.getMainNode().getGrid();
             if (grid == null) {
                 tunnel.setFrequency(frequency);

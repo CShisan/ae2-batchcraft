@@ -9,6 +9,7 @@ import cn.ae2bc.logic.PatternP2PEnergyGridService;
 import cn.ae2bc.logic.RedstoneOutputMode;
 import cn.ae2bc.logic.ReturnMode;
 import cn.ae2bc.logic.PatternP2PUnitConfiguration;
+import cn.ae2bc.logic.ProductExtractionSettings;
 import cn.ae2bc.part.PatternP2PUnitManagerPart;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -23,6 +24,8 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
     private static final String SET_PULSE_WIDTH = "setPulseWidth";
     private static final String SET_PULSE_PERIOD = "setPulsePeriod";
     private static final String SET_ENERGY_DISTRIBUTION_MODE = "setEnergyDistributionMode";
+    private static final String SET_PRODUCT_EXTRACTION_INTERVAL = "setProductExtractionInterval";
+    private static final String SET_PRODUCT_EXTRACTION_AMOUNT = "setProductExtractionAmount";
     private static final String RESET_TASK_STATE = "resetTaskState";
 
     public static final MenuType<PatternP2PUnitManagerMenu> TYPE = MenuTypeBuilder
@@ -39,6 +42,8 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
     @GuiSync(5) public int pulseWidth = PatternP2PUnitConfiguration.DEFAULT_PULSE_WIDTH;
     @GuiSync(6) public int pulsePeriod = PatternP2PUnitConfiguration.DEFAULT_PULSE_PERIOD;
     @GuiSync(7) public EnergyDistributionMode energyDistributionMode = EnergyDistributionMode.EVEN;
+    @GuiSync(8) public int productExtractionInterval = ProductExtractionSettings.DEFAULT_INTERVAL;
+    @GuiSync(9) public int productExtractionAmount = ProductExtractionSettings.DEFAULT_AMOUNT;
 
     public PatternP2PUnitManagerMenu(int id, Inventory inventory, PatternP2PUnitManagerPart host) {
         super(TYPE, id, inventory, host);
@@ -60,6 +65,10 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
                 configuration().withRedstone(redstoneStrength, redstoneMode, pulseWidth, value)));
         registerClientAction(SET_ENERGY_DISTRIBUTION_MODE, EnergyDistributionMode.class,
                 this::handleSetEnergyDistributionMode);
+        registerClientAction(SET_PRODUCT_EXTRACTION_INTERVAL, Integer.class, value -> update(
+                configuration().withProductExtraction(value, productExtractionAmount)));
+        registerClientAction(SET_PRODUCT_EXTRACTION_AMOUNT, Integer.class, value -> update(
+                configuration().withProductExtraction(productExtractionInterval, value)));
         registerClientAction(RESET_TASK_STATE, this::handleResetTaskState);
     }
 
@@ -97,6 +106,14 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
         energyDistributionMode = value;
         sendClientAction(SET_ENERGY_DISTRIBUTION_MODE, value);
     }
+    public void setProductExtractionInterval(int value) {
+        productExtractionInterval = ProductExtractionSettings.clampInterval(value);
+        sendClientAction(SET_PRODUCT_EXTRACTION_INTERVAL, productExtractionInterval);
+    }
+    public void setProductExtractionAmount(int value) {
+        productExtractionAmount = ProductExtractionSettings.clampAmount(value);
+        sendClientAction(SET_PRODUCT_EXTRACTION_AMOUNT, productExtractionAmount);
+    }
     public void resetTaskState() { sendClientAction(RESET_TASK_STATE); }
 
     private void handleResetTaskState() {
@@ -114,7 +131,8 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
 
     private PatternP2PUnitConfiguration configuration() {
         return new PatternP2PUnitConfiguration(returnMode, breakRecovery, redstoneStrength,
-                redstoneMode, pulseWidth, pulsePeriod);
+                redstoneMode, pulseWidth, pulsePeriod,
+                productExtractionInterval, productExtractionAmount);
     }
 
     private void update(PatternP2PUnitConfiguration value) {
@@ -128,5 +146,7 @@ public final class PatternP2PUnitManagerMenu extends AEBaseMenu {
         redstoneMode = value.redstoneMode();
         pulseWidth = value.pulseWidthTicks();
         pulsePeriod = value.pulsePeriodTicks();
+        productExtractionInterval = value.productExtractionInterval();
+        productExtractionAmount = value.productExtractionAmount();
     }
 }

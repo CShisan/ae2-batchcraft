@@ -25,8 +25,10 @@ class EnergyDistributionScreenResourceTest {
 
         assertTrue(unit.contains("\"syncMain\": {\"left\": 106, \"top\": 21"));
         assertTrue(unit.contains("\"returnStrict\": {\"left\": 12, \"top\": 50"));
-        assertTrue(unit.contains("\"energyDistributionMode\": {\"left\": 12, \"top\": 92"));
-        assertTrue(unit.contains("\"resetTask\": {\"left\": 12, \"top\": 134"));
+        assertTrue(unit.contains("\"extraction_interval\""));
+        assertTrue(unit.contains("\"extraction_amount\""));
+        assertTrue(unit.contains("\"energyDistributionMode\": {\"left\": 12, \"top\": 153"));
+        assertTrue(unit.contains("\"resetTask\": {\"left\": 12, \"top\": 195"));
     }
 
     @Test
@@ -36,10 +38,16 @@ class EnergyDistributionScreenResourceTest {
         String output = resource("assets/ae2/screens/ae2_batchcraft/pattern_p2p_tunnel_output.json");
 
         assertTrue(input.contains("\"returnStrict\": {\"left\": 12, \"top\": 50"));
-        assertTrue(input.contains("\"resetTask\": {\"left\": 12, \"top\": 92"));
+        assertTrue(input.contains("\"productExtraction\": {\"left\": 128, \"top\": 79"));
+        assertTrue(input.contains("\"extraction_interval\""));
+        assertTrue(input.contains("\"extraction_amount\""));
+        assertTrue(input.contains("\"resetTask\": {\"left\": 12, \"top\": 154"));
+        String inputSource = resourceSource("src/main/java/cn/ae2bc/client/PatternP2PTunnelInputScreen.java");
+        assertTrue(inputSource.contains(
+                "DashedSectionRenderer.trailingContentX(imageWidth, productExtractionWidth)"));
         assertTrue(energy.contains("\"left\": 12"));
         assertTrue(energy.contains("\"top\": 77"));
-        assertTrue(energy.contains("\"width\": 152"));
+        assertTrue(energy.contains("\"width\": 176"));
         org.junit.jupiter.api.Assertions.assertFalse(energy.contains("\"mode\""));
         org.junit.jupiter.api.Assertions.assertFalse(energy.contains("\"interval\""));
         assertTrue(output.contains("\"syncInputSettings\": {\"left\": 8, \"top\": 22"));
@@ -69,7 +77,17 @@ class EnergyDistributionScreenResourceTest {
             assertTrue(screen.contains("\"redstoneContinuous\": {\"left\": 116, \"top\": 50"));
             assertTrue(screen.contains("\"strength\""));
             assertTrue(screen.contains("\"top\": 96"));
+            assertTrue(screen.contains("\"left\": 143, \"top\": 117"));
+            assertTrue(screen.contains("\"left\": 143, \"top\": 138"));
             org.junit.jupiter.api.Assertions.assertFalse(screen.contains("\"redstoneMode\""));
+        }
+
+        String inputSource = resourceSource("src/main/java/cn/ae2bc/client/PatternP2PTunnelInputScreen.java");
+        String managerSource = resourceSource("src/main/java/cn/ae2bc/client/PatternP2PUnitManagerScreen.java");
+        for (String source : new String[]{inputSource, managerSource}) {
+            assertTrue(source.contains("leftPos + 104, topPos + 92"));
+            assertTrue(source.contains("leftPos + 104, topPos + 113"));
+            assertTrue(source.contains("leftPos + 104, topPos + 134"));
         }
     }
 
@@ -97,5 +115,9 @@ class EnergyDistributionScreenResourceTest {
             }
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         }
+    }
+
+    private static String resourceSource(String name) throws Exception {
+        return java.nio.file.Files.readString(java.nio.file.Path.of(name));
     }
 }

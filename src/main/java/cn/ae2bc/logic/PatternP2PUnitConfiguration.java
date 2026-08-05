@@ -9,14 +9,17 @@ public record PatternP2PUnitConfiguration(
         int redstoneStrength,
         RedstoneOutputMode redstoneMode,
         int pulseWidthTicks,
-        int pulsePeriodTicks) {
+        int pulsePeriodTicks,
+        int productExtractionInterval,
+        int productExtractionAmount) {
     public static final int DEFAULT_REDSTONE_STRENGTH = 15;
     public static final int DEFAULT_PULSE_WIDTH = 2;
     public static final int DEFAULT_PULSE_PERIOD = 20;
     public static final int MAX_PULSE_TICKS = 2000;
     public static final PatternP2PUnitConfiguration DEFAULT = new PatternP2PUnitConfiguration(
             ReturnMode.UNBLOCKED, true, DEFAULT_REDSTONE_STRENGTH,
-            RedstoneOutputMode.SINGLE_TRIGGER, DEFAULT_PULSE_WIDTH, DEFAULT_PULSE_PERIOD);
+            RedstoneOutputMode.SINGLE_TRIGGER, DEFAULT_PULSE_WIDTH, DEFAULT_PULSE_PERIOD,
+            ProductExtractionSettings.DEFAULT_INTERVAL, ProductExtractionSettings.DEFAULT_AMOUNT);
 
     public PatternP2PUnitConfiguration {
         returnMode = returnMode == null ? ReturnMode.UNBLOCKED : returnMode;
@@ -24,21 +27,31 @@ public record PatternP2PUnitConfiguration(
         redstoneStrength = Math.clamp(redstoneStrength, 0, 15);
         pulsePeriodTicks = Math.clamp(pulsePeriodTicks, 1, MAX_PULSE_TICKS);
         pulseWidthTicks = Math.clamp(pulseWidthTicks, 1, pulsePeriodTicks);
+        productExtractionInterval = ProductExtractionSettings.clampInterval(productExtractionInterval);
+        productExtractionAmount = ProductExtractionSettings.clampAmount(productExtractionAmount);
     }
 
     public PatternP2PUnitConfiguration withReturnMode(ReturnMode value) {
         return new PatternP2PUnitConfiguration(value, breakRecovery, redstoneStrength,
-                redstoneMode, pulseWidthTicks, pulsePeriodTicks);
+                redstoneMode, pulseWidthTicks, pulsePeriodTicks,
+                productExtractionInterval, productExtractionAmount);
     }
 
     public PatternP2PUnitConfiguration withBreakRecovery(boolean value) {
         return new PatternP2PUnitConfiguration(returnMode, value, redstoneStrength,
-                redstoneMode, pulseWidthTicks, pulsePeriodTicks);
+                redstoneMode, pulseWidthTicks, pulsePeriodTicks,
+                productExtractionInterval, productExtractionAmount);
     }
 
     public PatternP2PUnitConfiguration withRedstone(int strength, RedstoneOutputMode mode,
                                           int widthTicks, int periodTicks) {
-        return new PatternP2PUnitConfiguration(returnMode, breakRecovery, strength, mode, widthTicks, periodTicks);
+        return new PatternP2PUnitConfiguration(returnMode, breakRecovery, strength, mode, widthTicks, periodTicks,
+                productExtractionInterval, productExtractionAmount);
+    }
+
+    public PatternP2PUnitConfiguration withProductExtraction(int interval, int amount) {
+        return new PatternP2PUnitConfiguration(returnMode, breakRecovery, redstoneStrength,
+                redstoneMode, pulseWidthTicks, pulsePeriodTicks, interval, amount);
     }
 
     public CompoundTag write() {
@@ -49,6 +62,8 @@ public record PatternP2PUnitConfiguration(
         data.putByte("RedstoneMode", (byte) redstoneMode.getId());
         data.putInt("PulseWidth", pulseWidthTicks);
         data.putInt("PulsePeriod", pulsePeriodTicks);
+        data.putInt("ProductExtractionInterval", productExtractionInterval);
+        data.putInt("ProductExtractionAmount", productExtractionAmount);
         return data;
     }
 
@@ -63,6 +78,10 @@ public record PatternP2PUnitConfiguration(
                 data.contains("RedstoneMode")
                         ? RedstoneOutputMode.fromId(data.getByte("RedstoneMode")) : DEFAULT.redstoneMode,
                 data.contains("PulseWidth") ? data.getInt("PulseWidth") : DEFAULT.pulseWidthTicks,
-                data.contains("PulsePeriod") ? data.getInt("PulsePeriod") : DEFAULT.pulsePeriodTicks);
+                data.contains("PulsePeriod") ? data.getInt("PulsePeriod") : DEFAULT.pulsePeriodTicks,
+                data.contains("ProductExtractionInterval")
+                        ? data.getInt("ProductExtractionInterval") : DEFAULT.productExtractionInterval,
+                data.contains("ProductExtractionAmount")
+                        ? data.getInt("ProductExtractionAmount") : DEFAULT.productExtractionAmount);
     }
 }

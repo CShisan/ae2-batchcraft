@@ -20,8 +20,8 @@ A Pattern P2P input receives complete crafting jobs from a standard AE2 Pattern 
 | **Pattern P2P Tunnel (Output)** | Sends ingredients into one adjacent machine and returns its products. Uses no AE channel and can queue up to `64` jobs. |
 | **Pattern P2P Tunnel (Energy)** | Powers the AE subnet first, then distributes remaining FE among output machines and active Unit Energy Ports. Uses no channel or P2P frequency. |
 | **Pattern P2P Unit (Manager)** | Receives one complete job and coordinates a group of bound functional ports. Available in fluix and all `16` AE2 cable colors. |
-| **Pattern P2P Unit Ports** | Eight port types provide Transfer, Drop, Place, Return, Pickup, Break, Redstone, and Energy functions. Managers and ports use no additional channels. |
-| **Product Extraction Card** | Lets a Pattern Provider and its linked outputs actively extract filtered products from adjacent machines. Supports items, fluids, and compatible integration resource types. |
+| **Pattern P2P Unit Ports** | Nine port types provide Transfer, Drop, Place, Return, Extraction, Pickup, Break, Redstone, and Energy functions. Managers and ports use no additional channels. |
+| **Product Extraction Card** | Lets a Pattern Provider actively extract filtered products from adjacent machines. Supports items, fluids, and compatible integration resource types. |
 | **AE Component Placer** | Batch-places AE cables and cable-attached parts over a point, line, or plane up to `16 x 16`, with optional P2P frequency assignment. |
 | **Per-material Configuration** | Assigns an ingredient input side for standard outputs or selects Normal, Drop, and Place forms for Pattern P2P Unit ports. |
 
@@ -31,7 +31,7 @@ A Pattern P2P input receives complete crafting jobs from a standard AE2 Pattern 
 - **Fewer channels:** only the Pattern P2P input uses `1` channel; outputs, Unit Managers, and Unit ports use none.
 - **Centralized patterns:** processing patterns remain in one standard Pattern Provider instead of being copied to every machine.
 - **Flexible automation:** Pattern P2P Units can transfer materials, place or break blocks, collect drops, return products, emit redstone, and supply FE as one task endpoint.
-- **Automatic product extraction:** a Product Extraction Card can pull results from machines without a separate output pipe.
+- **Automatic product extraction:** Pattern Providers, P2P outputs, and Unit Extraction Ports can pull results without a separate output pipe.
 - **Centralized power:** an Energy Tunnel can use even or round-robin distribution across eligible machines.
 - **Fast expansion:** the AE Component Placer can build a complete row or plane of cable-and-part endpoints.
 - **Resource compatibility:** generic AE resource handling supports items, fluids, and compatible types such as Applied Mekanistics chemicals when the integration is installed.
@@ -65,7 +65,8 @@ The Manager joins the same round-robin group as standard outputs but processes o
 
 ### Optional Automation
 
-- Install a **Product Extraction Card** in the Pattern Provider, then open its extraction settings from the left toolbar to configure interval, amount, and whitelist or blacklist filters. Linked outputs inherit these settings.
+- Configure extraction under **Product Return Configuration** on the Pattern P2P input. The switch controls normal outputs; the interval and amount also configure synchronized Unit Extraction Ports.
+- Install a **Product Extraction Card** in the Pattern Provider to configure its own adjacent-machine extraction and return filter.
 - Place a **Pattern P2P Tunnel (Energy)** toward an FE source to power the subnet and eligible machines. Right-click it to choose passive/active input and even/round-robin distribution.
 - Use the **AE Component Placer** to select a point, line, or plane, choose a cable and part, optionally load a Memory Card frequency, and place the configured endpoints in one action.
 

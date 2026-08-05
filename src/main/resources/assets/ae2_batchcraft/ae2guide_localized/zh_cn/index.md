@@ -32,6 +32,7 @@ item_ids:
 - ae2_batchcraft:pattern_p2p_unit_port_break
 - ae2_batchcraft:pattern_p2p_unit_port_transfer
 - ae2_batchcraft:pattern_p2p_unit_port_return
+- ae2_batchcraft:pattern_p2p_unit_port_extract
 - ae2_batchcraft:pattern_p2p_unit_port_redstone
 - ae2_batchcraft:pattern_p2p_unit_port_energy
 ---
@@ -195,6 +196,7 @@ item_ids:
   <ItemImage id="ae2_batchcraft:pattern_p2p_unit_manager" scale="3" />
   <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_transfer" scale="2" />
   <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_return" scale="2" />
+  <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_extract" scale="2" />
   <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_redstone" scale="2" />
   <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_energy" scale="2" />
 </Row>
@@ -251,6 +253,10 @@ item_ids:
 
 接收相邻设备或管线推入的物品与流体，并将其作为当前任务的产物返回主端。
 
+#### 提取端口
+
+任务进行期间，主动从端口正面连接的机器提取产物。该端口只采用提取间隔和数量，不受输入端提取开关影响。启用“同步主端配置”的单元管理器继承输入端数值；关闭同步后可在管理器中单独设置。材料仍在下发时也可以提取；全部材料下发完成前任务不会结束。配置的提取间隔不会被缩短；连续空提取会增加额外退避，额外退避上限为 20 tick，存储能力变化时会提前唤醒。
+
 #### 拾取端口
 
 拾取端口前方一格内的物品实体并返回主端；它也能像返回端口一样接收相邻设备主动推入的产物。
@@ -284,17 +290,21 @@ item_ids:
   </Row>
 
   <Row gap="12">
-    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_drop" />
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_extract" />
     <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_pickup" />
   </Row>
 
   <Row gap="12">
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_drop" />
     <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_place" />
-    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_break" />
   </Row>
 
   <Row gap="12">
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_break" />
     <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_redstone" />
+  </Row>
+
+  <Row gap="12">
     <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_energy" />
   </Row>
 </Column>
@@ -310,15 +320,15 @@ item_ids:
 <Column gap="0">
 ### 作用
 
-让样板供应器或样板 P2P 从端主动从相邻机器提取产物，减少机器输出面需要额外管线的情况。
+让样板供应器主动从相邻机器提取经过筛选的产物。
 
 ### 使用方法
 
-将卡安装到样板供应器的升级槽。打开样板供应器界面后，点击左侧工具栏中的“产物提取设置”。从端会自动采用其连接主端的设置。
+将卡安装到样板供应器的升级槽。打开样板供应器界面后，点击左侧工具栏中的“产物提取设置”。下游端点的提取功能在样板 P2P 输入端独立配置。
 
 ### 配置
 
-设置每次提取的间隔和总数量；在标记槽放入物品，再选择筛选模式。
+设置活跃提取时的间隔和每次最大数量；在标记槽放入物品，再选择筛选模式。配置的提取间隔不会被缩短；连续空提取会增加额外退避，额外退避上限为 20 tick，存储能力变化时会提前唤醒。
 
 #### 黑名单
 

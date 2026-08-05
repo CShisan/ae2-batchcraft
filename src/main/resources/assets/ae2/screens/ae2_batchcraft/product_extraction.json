@@ -43,7 +43,7 @@
       "position": { "left": 8, "top": 45 }
     },
     "amount_unit": {
-      "text": { "translate": "gui.ae2_batchcraft.product_extraction.item" },
+      "text": { "translate": "gui.ae2_batchcraft.product_extraction.unit" },
       "position": { "left": 102, "top": 45 }
     },
     "marker": {

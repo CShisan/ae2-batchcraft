@@ -19,6 +19,8 @@ class ComponentPlacerResourceTest {
         assertTrue(screen.contains("gui.ae2_batchcraft.component_placer.linked"));
         assertTrue(screen.contains("gui.ae2_batchcraft.component_placer.not_linked"));
         assertTrue(screen.contains("\"height\": 228"));
+        assertTrue(screen.contains("\"left\": 40"));
+        assertTrue(screen.contains("\"left\": 88"));
         assertTranslations(CHINESE);
         assertTranslations(ENGLISH);
     }

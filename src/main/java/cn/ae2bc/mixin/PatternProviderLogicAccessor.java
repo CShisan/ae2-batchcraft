@@ -1,5 +1,6 @@
 package cn.ae2bc.mixin;
 
+import appeng.api.stacks.GenericStack;
 import appeng.helpers.patternprovider.PatternProviderLogic;
 import net.minecraft.core.Direction;
 import org.spongepowered.asm.mixin.Mixin;
@@ -11,4 +12,7 @@ import java.util.Set;
 public interface PatternProviderLogicAccessor {
     @Invoker("getActiveSides")
     Set<Direction> ae2bc$getActiveSides();
+
+    @Invoker("onStackReturnedToNetwork")
+    void ae2bc$onStackReturnedToNetwork(GenericStack stack);
 }

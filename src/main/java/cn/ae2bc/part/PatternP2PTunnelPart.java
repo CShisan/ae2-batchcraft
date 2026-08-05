@@ -18,7 +18,6 @@ import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.KeyCounter;
 import appeng.helpers.externalstorage.GenericStackFluidStorage;
 import appeng.helpers.externalstorage.GenericStackItemStorage;
-import appeng.helpers.patternprovider.PatternProviderLogicHost;
 import appeng.items.tools.MemoryCardItem;
 import appeng.me.service.P2PService;
 import appeng.menu.MenuOpener;
@@ -32,9 +31,9 @@ import cn.ae2bc.placer.ComponentPlacerItem;
 import cn.ae2bc.logic.PatternP2PTunnelInputLogic;
 import cn.ae2bc.logic.PatternP2PTunnelOutputLogic;
 import cn.ae2bc.logic.PatternP2PEnergyGridService;
+import cn.ae2bc.logic.PatternP2PTopologyGridService;
 import cn.ae2bc.logic.RemoteReturnInventory;
-import cn.ae2bc.logic.ProductExtractionSettings;
-import cn.ae2bc.extension.PatternProviderExtractionExtension;
+import cn.ae2bc.logic.EndpointProductExtractionSettings;
 import cn.ae2bc.menu.PatternP2PTunnelInputMenu;
 import cn.ae2bc.menu.PatternP2PTunnelOutputMenu;
 import cn.ae2bc.registry.ModContent;
@@ -99,7 +98,7 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
                     if (outputLogic != null) {
                         outputLogic.onReturnedStack(stack);
                     }
-                });
+                }, this::alertReturnProducer);
         this.returnItemHandler = new GenericStackItemStorage(returnInventory);
         this.returnFluidHandler = new GenericStackFluidStorage(returnInventory);
     }
@@ -175,7 +174,13 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
         return returnInventory;
     }
 
-    public @Nullable ProductExtractionSettings getProductExtractionSettingsFromInput() {
+    private void alertReturnProducer() {
+        if (outputLogic != null) {
+            outputLogic.alertRetry();
+        }
+    }
+
+    public @Nullable EndpointProductExtractionSettings getProductExtractionSettingsFromInput() {
         if (!isStandardOutput()) {
             return null;
         }
@@ -183,22 +188,7 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
         if (input == null || input.isOutput() || !input.hasConfiguredFrequency()) {
             return null;
         }
-        Direction side = input.getSide();
-        var level = input.getLevel();
-        if (side == null || !(level instanceof ServerLevel serverLevel)) {
-            return null;
-        }
-        var targetPos = input.getBlockEntity().getBlockPos().relative(side);
-        Direction targetSide = side.getOpposite();
-        var blockEntity = serverLevel.getBlockEntity(targetPos);
-        if (blockEntity instanceof PatternProviderLogicHost provider) {
-            return ((PatternProviderExtractionExtension) provider.getLogic()).ae2bc$getProductExtractionSettings();
-        }
-        var partHost = PartHelper.getPartHost(serverLevel, targetPos);
-        if (partHost != null && partHost.getPart(targetSide) instanceof PatternProviderLogicHost provider) {
-            return ((PatternProviderExtractionExtension) provider.getLogic()).ae2bc$getProductExtractionSettings();
-        }
-        return null;
+        return input.getInputLogic().getProductExtractionSettings();
     }
 
     public GenericStackItemStorage getReturnItemHandler() {
@@ -397,6 +387,7 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
         if (grid != null) {
             var energyService = grid.getService(PatternP2PEnergyGridService.class);
             energyService.topologyChanged();
+            grid.getService(PatternP2PTopologyGridService.class).topologyChanged();
             if (isStandardOutput()) {
                 energyService.synchronizeOutputGroupMode(this, null);
             }
@@ -547,10 +538,8 @@ public final class PatternP2PTunnelPart extends P2PTunnelPart<PatternP2PTunnelPa
             return false;
         }
         var grid = getMainNode().getGrid();
-        return grid != null && grid.getMachines(PatternP2PTunnelPart.class).stream()
-                .anyMatch(part -> part.isOutput()
-                        && part.getFrequency() == getFrequency()
-                        && part.isTaskActive());
+        return grid != null && grid.getService(PatternP2PTopologyGridService.class)
+                .getOutputs(getFrequency()).stream().anyMatch(PatternP2PTunnelPart::isTaskActive);
     }
 
     private GenericInternalInventory findInputReturnInventory() {

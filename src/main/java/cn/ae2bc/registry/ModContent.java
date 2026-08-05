@@ -106,6 +106,8 @@ public final class ModContent {
             patternP2PUnitPort("pattern_p2p_unit_port_transfer", PatternP2PUnitPortType.TRANSFER);
     public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_RETURN =
             patternP2PUnitPort("pattern_p2p_unit_port_return", PatternP2PUnitPortType.RETURN);
+    public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_EXTRACT =
+            patternP2PUnitPort("pattern_p2p_unit_port_extract", PatternP2PUnitPortType.EXTRACT);
     public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_REDSTONE =
             patternP2PUnitPort("pattern_p2p_unit_port_redstone", PatternP2PUnitPortType.REDSTONE);
     public static final DeferredHolder<Item, PartItem<PatternP2PUnitPortPart>> PATTERN_P2P_UNIT_PORT_ENERGY =
@@ -132,6 +134,7 @@ public final class ModContent {
                 output.accept(PATTERN_P2P_UNIT_PORT_BREAK.get());
                 output.accept(PATTERN_P2P_UNIT_PORT_TRANSFER.get());
                 output.accept(PATTERN_P2P_UNIT_PORT_RETURN.get());
+                output.accept(PATTERN_P2P_UNIT_PORT_EXTRACT.get());
                 output.accept(PATTERN_P2P_UNIT_PORT_REDSTONE.get());
                 output.accept(PATTERN_P2P_UNIT_PORT_ENERGY.get());
                 output.accept(PRODUCT_EXTRACTION_CARD.get());

@@ -12,6 +12,7 @@ import appeng.api.stacks.GenericStack;
 import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.MEStorage;
 import appeng.helpers.patternprovider.PatternProviderReturnInventory;
+import cn.ae2bc.extension.ImmediatePatternProviderReturnInventory;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,14 +28,18 @@ public final class RemoteReturnInventory implements GenericInternalInventory, ME
     private final Supplier<@Nullable GenericInternalInventory> targetSupplier;
     private final BiFunction<AEKey, Long, Long> amountFilter;
     private final Consumer<GenericStack> insertionListener;
+    private final Runnable returnProgressListener;
+    private @Nullable ImmediatePatternProviderReturnInventory subscribedReturnInventory;
     private boolean productExtractionBypass;
 
     public RemoteReturnInventory(Supplier<@Nullable GenericInternalInventory> targetSupplier,
                                  BiFunction<AEKey, Long, Long> amountFilter,
-                                 Consumer<GenericStack> insertionListener) {
+                                 Consumer<GenericStack> insertionListener,
+                                 Runnable returnProgressListener) {
         this.targetSupplier = Objects.requireNonNull(targetSupplier, "targetSupplier");
         this.amountFilter = Objects.requireNonNull(amountFilter, "amountFilter");
         this.insertionListener = Objects.requireNonNull(insertionListener, "insertionListener");
+        this.returnProgressListener = Objects.requireNonNull(returnProgressListener, "returnProgressListener");
     }
 
     @Override
@@ -116,8 +121,13 @@ public final class RemoteReturnInventory implements GenericInternalInventory, ME
         if (target == null) {
             return 0;
         }
+        requestImmediateFlushIfNeeded(target, mode);
         long inserted = target.insert(slot, what, amount, mode);
+        registerReturnProgressIfBlocked(target, mode, inserted);
         notifyInserted(what, inserted, mode);
+        if (inserted > 0) {
+            requestImmediateFlushIfNeeded(target, mode);
+        }
         return inserted;
     }
 
@@ -150,19 +160,29 @@ public final class RemoteReturnInventory implements GenericInternalInventory, ME
         }
         var target = getTarget();
         if (target instanceof MEStorage storage) {
+            requestImmediateFlushIfNeeded(target, mode);
             long inserted = storage.insert(what, amount, mode, source);
+            registerReturnProgressIfBlocked(target, mode, inserted);
             notifyInserted(what, inserted, mode);
+            if (inserted > 0) {
+                requestImmediateFlushIfNeeded(target, mode);
+            }
             return inserted;
         }
         if (target == null) {
             return 0;
         }
 
+        requestImmediateFlushIfNeeded(target, mode);
         long inserted = 0;
         for (int slot = 0; slot < target.size() && inserted < amount; slot++) {
             inserted += target.insert(slot, what, amount - inserted, mode);
         }
+        registerReturnProgressIfBlocked(target, mode, inserted);
         notifyInserted(what, inserted, mode);
+        if (inserted > 0) {
+            requestImmediateFlushIfNeeded(target, mode);
+        }
         return inserted;
     }
 
@@ -183,12 +203,43 @@ public final class RemoteReturnInventory implements GenericInternalInventory, ME
 
     private @Nullable GenericInternalInventory getTarget() {
         var target = targetSupplier.get();
-        return target == this || target instanceof RemoteReturnInventory ? null : target;
+        if (target == this || target instanceof RemoteReturnInventory) {
+            target = null;
+        }
+        trackSubscriptionTarget(target);
+        return target;
     }
 
     private void notifyInserted(AEKey what, long amount, Actionable mode) {
         if (mode == Actionable.MODULATE && amount > 0) {
             insertionListener.accept(new GenericStack(what, amount));
+        }
+    }
+
+    private void requestImmediateFlushIfNeeded(GenericInternalInventory target, Actionable mode) {
+        if (mode != Actionable.MODULATE
+                || !(target instanceof ImmediatePatternProviderReturnInventory immediateReturnInventory)) {
+            return;
+        }
+        immediateReturnInventory.ae2bc$requestImmediateFlush(returnProgressListener);
+    }
+
+    private void registerReturnProgressIfBlocked(GenericInternalInventory target, Actionable mode, long inserted) {
+        if (mode != Actionable.SIMULATE || inserted > 0
+                || !(target instanceof ImmediatePatternProviderReturnInventory immediateReturnInventory)) {
+            return;
+        }
+        immediateReturnInventory.ae2bc$registerReturnProgressListener(returnProgressListener);
+    }
+
+    private void trackSubscriptionTarget(@Nullable GenericInternalInventory target) {
+        ImmediatePatternProviderReturnInventory next =
+                target instanceof ImmediatePatternProviderReturnInventory immediate ? immediate : null;
+        if (subscribedReturnInventory != next) {
+            if (subscribedReturnInventory != null) {
+                subscribedReturnInventory.ae2bc$unregisterReturnProgressListener(returnProgressListener);
+            }
+            subscribedReturnInventory = next;
         }
     }
 

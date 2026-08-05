@@ -7,7 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.Objects;
 import java.util.Set;
 
-/** Immutable server-side view of a pattern provider's product extraction settings. */
+/** Immutable extraction policy used by product extractors. */
 public record ProductExtractionSettings(boolean enabled, int interval, int amount,
                                         boolean whitelist, Set<AEKey> markers) {
     public static final int DEFAULT_INTERVAL = 20;

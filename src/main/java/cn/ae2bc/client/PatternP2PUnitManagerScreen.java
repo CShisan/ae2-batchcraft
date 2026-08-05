@@ -25,6 +25,7 @@ public final class PatternP2PUnitManagerScreen extends PatternP2PUnitPagedScreen
     private ValidatedIntegerField strengthInput;
     private ValidatedIntegerField pulseTimeInput;
     private ValidatedIntegerField pulsePeriodInput;
+    private ProductExtractionControls extractionControls;
 
     public PatternP2PUnitManagerScreen(PatternP2PUnitManagerMenu menu, Inventory inventory, Component title, ScreenStyle style) {
         super(menu, inventory, title, style);
@@ -72,16 +73,18 @@ public final class PatternP2PUnitManagerScreen extends PatternP2PUnitPagedScreen
         breakRecovery.fitToMessage();
         breakRecovery.setX(leftPos + 12);
         breakRecovery.setY(topPos + 52);
+        extractionControls = ProductExtractionControls.create(font, leftPos, topPos,
+                this::addRenderableWidget, menu::setProductExtractionInterval, menu::setProductExtractionAmount);
         strengthInput = addRenderableWidget(new ValidatedIntegerField(font,
-                leftPos + 112, topPos + 92, 36, 16,
+                leftPos + 104, topPos + 92, 36, 16,
                 Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.redstone_strength"),
                 () -> 0, () -> 15, menu::setRedstoneStrength));
         pulseTimeInput = addRenderableWidget(new ValidatedIntegerField(font,
-                leftPos + 112, topPos + 113, 36, 16,
+                leftPos + 104, topPos + 113, 36, 16,
                 Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.pulse_width"),
                 () -> 1, () -> menu.pulsePeriod, menu::setPulseWidth));
         pulsePeriodInput = addRenderableWidget(new ValidatedIntegerField(font,
-                leftPos + 112, topPos + 134, 36, 16,
+                leftPos + 104, topPos + 134, 36, 16,
                 Component.translatable("gui.ae2_batchcraft.pattern_p2p_unit.pulse_period"),
                 () -> 1, () -> PatternP2PUnitConfiguration.MAX_PULSE_TICKS, menu::setPulsePeriod));
         PatternP2PUnitConfigScreenSupport.applyRedstonePortTooltips(redstoneModeButtons.values(),
@@ -92,7 +95,7 @@ public final class PatternP2PUnitManagerScreen extends PatternP2PUnitPagedScreen
     @Override
     protected int getPageHeight(Page page) {
         return switch (page) {
-            case COMMON -> 166;
+            case COMMON -> 227;
             case BREAK -> 82;
             case REDSTONE -> 166;
         };
@@ -119,6 +122,12 @@ public final class PatternP2PUnitManagerScreen extends PatternP2PUnitPagedScreen
             pulseTimeInput.visible = redstonePort;
             pulsePeriodInput.visible = redstonePort;
         }
+        if (extractionControls != null) {
+            extractionControls.setVisible(common);
+        }
+
+        setTextHidden("extraction_interval", !common);
+        setTextHidden("extraction_amount", !common);
 
         setTextHidden("strength", !redstonePort);
         setTextHidden("pulse_width", !redstonePort);
@@ -144,9 +153,11 @@ public final class PatternP2PUnitManagerScreen extends PatternP2PUnitPagedScreen
         strengthInput.setEditable(editable);
         pulseTimeInput.setEditable(editable);
         pulsePeriodInput.setEditable(editable);
+        extractionControls.setEditable(editable);
         strengthInput.syncValue(menu.redstoneStrength);
         pulseTimeInput.syncValue(menu.pulseWidth);
         pulsePeriodInput.syncValue(menu.pulsePeriod);
+        extractionControls.sync(menu.productExtractionInterval, menu.productExtractionAmount);
     }
 
     @Override
@@ -155,10 +166,12 @@ public final class PatternP2PUnitManagerScreen extends PatternP2PUnitPagedScreen
         super.drawBG(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
         if (isPage(Page.COMMON)) {
             drawSectionBackground(graphics, offsetX, offsetY, 43, 74,
-                    "gui.ae2_batchcraft.return_mode");
-            drawSectionBackground(graphics, offsetX, offsetY, 85, 116,
+                    "gui.ae2_batchcraft.return_configuration");
+            drawSectionBackground(graphics, offsetX, offsetY, 85, 137,
+                    "gui.ae2_batchcraft.product_extraction.title");
+            drawSectionBackground(graphics, offsetX, offsetY, 146, 177,
                     "gui.ae2_batchcraft.pattern_p2p_unit.section.energy_configuration");
-            drawSectionBackground(graphics, offsetX, offsetY, 127, 158,
+            drawSectionBackground(graphics, offsetX, offsetY, 188, 219,
                     "gui.ae2_batchcraft.pattern_p2p_unit.section.task_reset");
         } else if (isPage(Page.BREAK)) {
             drawSectionBackground(graphics, offsetX, offsetY, 43, 74,
@@ -175,10 +188,13 @@ public final class PatternP2PUnitManagerScreen extends PatternP2PUnitPagedScreen
     public void drawFG(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY) {
         super.drawFG(graphics, offsetX, offsetY, mouseX, mouseY);
         if (isPage(Page.COMMON)) {
-            drawSectionTitle(graphics, 39, "gui.ae2_batchcraft.return_mode");
+            drawSectionTitle(graphics, 39, "gui.ae2_batchcraft.return_configuration");
             drawSectionTitle(graphics, 81,
+                    "gui.ae2_batchcraft.product_extraction.title");
+            extractionControls.drawUnits(graphics, font, leftPos);
+            drawSectionTitle(graphics, 142,
                     "gui.ae2_batchcraft.pattern_p2p_unit.section.energy_configuration");
-            drawSectionTitle(graphics, 123,
+            drawSectionTitle(graphics, 184,
                     "gui.ae2_batchcraft.pattern_p2p_unit.section.task_reset");
         } else if (isPage(Page.BREAK)) {
             drawSectionTitle(graphics, 39,

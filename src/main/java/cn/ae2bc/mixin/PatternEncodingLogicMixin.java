@@ -4,7 +4,9 @@ import appeng.api.stacks.AEKey;
 import appeng.crafting.pattern.AEProcessingPattern;
 import appeng.parts.encoding.PatternEncodingLogic;
 import appeng.util.ConfigInventory;
+import appeng.util.inv.AppEngInternalInventory;
 import cn.ae2bc.pattern.MaterialOutputConfigData;
+import cn.ae2bc.pattern.MaterialOutputEncodingContext;
 import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.extension.PatternEncodingLogicExtension;
 import net.minecraft.core.HolderLookup;
@@ -30,10 +32,35 @@ public abstract class PatternEncodingLogicMixin implements PatternEncodingLogicE
     @Final
     private ConfigInventory encodedInputInv;
 
+    @Shadow
+    @Final
+    private AppEngInternalInventory encodedPatternInv;
+
     @Unique
     private MaterialOutputConfigData ae2bc$materialOutputConfig = MaterialOutputConfigData.EMPTY;
     @Unique
     private final AEKey[] ae2bc$inputKeys = new AEKey[AEProcessingPattern.MAX_INPUT_SLOTS];
+
+    @Inject(method = "onChangeInventory", at = @At("HEAD"))
+    private void ae2bc$writeMaterialOutputConfigToEncodedPattern(AppEngInternalInventory inventory, int slot,
+                                                                   CallbackInfo ci) {
+        if (inventory != encodedPatternInv || slot != 0) {
+            return;
+        }
+        if (!MaterialOutputEncodingContext.isActiveFor(this)) {
+            return;
+        }
+        MaterialOutputConfigData config = ae2bc$materialOutputConfig;
+        ItemStack pattern = inventory.getStackInSlot(slot);
+        if (pattern.isEmpty()) {
+            return;
+        }
+        if (config.isEmpty()) {
+            pattern.remove(ModContent.MATERIAL_OUTPUT_CONFIG.get());
+        } else {
+            pattern.set(ModContent.MATERIAL_OUTPUT_CONFIG.get(), config);
+        }
+    }
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void ae2bc$initializeInputSnapshot(CallbackInfo ci) {

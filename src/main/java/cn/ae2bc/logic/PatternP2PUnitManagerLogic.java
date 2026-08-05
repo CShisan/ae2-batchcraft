@@ -138,22 +138,26 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         }
         syncMainConfiguration = enabled;
         changed();
+        wakePorts();
     }
 
     public void setLocalConfiguration(PatternP2PUnitConfiguration configuration) {
         if (!syncMainConfiguration && configuration != null && !configuration.equals(localConfiguration)) {
             localConfiguration = configuration;
             changed();
+            wakePorts();
         }
     }
 
     public void applyMainConfiguration(PatternP2PUnitConfiguration configuration, long revision) {
-        if (configuration == null || revision < cachedMainRevision) {
+        if (!ConfigurationSync.shouldApply(
+                cachedMainConfiguration, cachedMainRevision, configuration, revision)) {
             return;
         }
         cachedMainConfiguration = configuration;
         cachedMainRevision = revision;
         changed();
+        wakePorts();
     }
 
     public boolean tryAcceptPattern(IPatternDetails pattern, PatternDispatchMetadata metadata,
@@ -233,11 +237,12 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         if (grid == null) {
             return Map.of();
         }
-        Map<PatternP2PUnitPortType, List<PatternP2PUnitPortPart>> result =
-                new EnumMap<>(PatternP2PUnitPortType.class);
-        for (PatternP2PUnitPortPart port : grid.getMachines(PatternP2PUnitPortPart.class)) {
-            if (port.isBoundTo(manager)) {
-                result.computeIfAbsent(port.getType(), ignored -> new ArrayList<>()).add(port);
+        Map<PatternP2PUnitPortType, List<PatternP2PUnitPortPart>> result = new EnumMap<>(PatternP2PUnitPortType.class);
+        for (PatternP2PUnitPortType type : PatternP2PUnitPortType.values()) {
+            List<PatternP2PUnitPortPart> ports = grid.getService(PatternP2PTopologyGridService.class)
+                    .getPorts(manager.getPatternP2PUnitId(), type);
+            if (!ports.isEmpty()) {
+                result.put(type, ports);
             }
         }
         return result;
@@ -309,6 +314,16 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         return manager.getReturnInventory().insert(what, filtered, mode, actionSource);
     }
 
+    public long insertProductExtractionRecovery(AEKey what, long amount) {
+        RemoteReturnInventory destination = manager.getReturnInventory();
+        destination.setProductExtractionBypass(true);
+        try {
+            return destination.insert(what, amount, Actionable.MODULATE, actionSource);
+        } finally {
+            destination.setProductExtractionBypass(false);
+        }
+    }
+
     public void onReturnedStack(GenericStack stack) {
         if (!isTaskActive() || stack == null || stack.amount() <= 0) {
             return;
@@ -348,10 +363,9 @@ public final class PatternP2PUnitManagerLogic implements IGridTickable {
         if (grid == null) {
             return;
         }
-        for (PatternP2PUnitPortPart port : grid.getMachines(PatternP2PUnitPortPart.class)) {
-            if (port.isBoundTo(manager)) {
-                grid.getTickManager().alertDevice(port.getGridNode());
-            }
+        for (PatternP2PUnitPortPart port : grid.getService(PatternP2PTopologyGridService.class)
+                .getPorts(manager.getPatternP2PUnitId())) {
+            port.alertTicking();
         }
     }
 

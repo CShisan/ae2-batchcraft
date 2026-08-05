@@ -1,8 +1,9 @@
 package cn.ae2bc.logic;
 
-/** Describes whether a product-extraction tick is disabled, waiting, or due. */
+/** Describes the outcome of one product-extraction scheduling pass. */
 public enum ProductExtractionTickState {
     DISABLED,
     WAITING,
-    ATTEMPTED
+    PROGRESSED,
+    NO_PROGRESS
 }

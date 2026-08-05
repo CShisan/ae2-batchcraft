@@ -9,6 +9,7 @@ public enum PatternP2PUnitPortType {
     BREAK("break"),
     TRANSFER("transfer"),
     RETURN("return"),
+    EXTRACT("extract"),
     REDSTONE("redstone"),
     ENERGY("energy");
 

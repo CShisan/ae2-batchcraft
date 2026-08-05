@@ -8,12 +8,10 @@ import appeng.api.stacks.GenericStack;
 import cn.ae2bc.pattern.InputDirectionData;
 import cn.ae2bc.pattern.MaterialOutputConfigData;
 import cn.ae2bc.pattern.MaterialOutputForm;
-import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.extension.PatternEncodingLogicExtension;
 import cn.ae2bc.extension.PatternEncodingTermMenuExtension;
 import net.minecraft.core.Direction;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -21,7 +19,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PatternEncodingTermMenu.class)
 public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTermMenuExtension {
@@ -83,21 +80,6 @@ public abstract class PatternEncodingTermMenuMixin implements PatternEncodingTer
         PatternEncodingTermMenu menu = (PatternEncodingTermMenu) (Object) this;
         if (!menu.isClientSide()) {
             ae2bc$setSyncedConfig(((PatternEncodingLogicExtension) encodingLogic).ae2bc$getMaterialOutputConfig());
-        }
-    }
-
-    @Inject(method = "encodeProcessingPattern", at = @At("RETURN"))
-    private void ae2bc$writeMaterialOutputConfigToPattern(CallbackInfoReturnable<ItemStack> cir) {
-        ItemStack pattern = cir.getReturnValue();
-        if (pattern == null || pattern.isEmpty()) {
-            return;
-        }
-        MaterialOutputConfigData config =
-                ((PatternEncodingLogicExtension) encodingLogic).ae2bc$getMaterialOutputConfig();
-        if (config.isEmpty()) {
-            pattern.remove(ModContent.MATERIAL_OUTPUT_CONFIG.get());
-        } else {
-            pattern.set(ModContent.MATERIAL_OUTPUT_CONFIG.get(), config);
         }
     }
 

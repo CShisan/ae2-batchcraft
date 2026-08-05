@@ -215,7 +215,7 @@ public final class ComponentPlacerItem extends WirelessTerminalItem {
         if (stack == null || stack.isEmpty() || !(stack.getItem() instanceof IPartItem<?> partItem)) {
             return false;
         }
-        return !(partItem.createPart() instanceof ICablePart);
+        return !ICablePart.class.isAssignableFrom(partItem.getPartClass());
     }
 
     public static boolean hasCraftingCard(ItemStack placer) {

@@ -9,6 +9,7 @@ import cn.ae2bc.link.RoundRobin;
 import cn.ae2bc.part.PatternP2PTunnelPart;
 import cn.ae2bc.part.PatternTaskEndpoint;
 import cn.ae2bc.part.PatternP2PUnitManagerPart;
+import cn.ae2bc.part.PatternP2PUnitPortPart;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 
@@ -23,6 +24,10 @@ public final class PatternP2PTunnelInputLogic {
     private static final String RETURN_MODE = "ReturnMode";
     private static final String PATTERN_P2P_UNIT_CONFIGURATION = "PatternP2PUnitConfiguration";
     private static final String PATTERN_P2P_UNIT_CONFIGURATION_REVISION = "PatternP2PUnitConfigurationRevision";
+    private static final String PRODUCT_EXTRACTION_ENABLED = "ProductExtractionEnabled";
+    private static final String PRODUCT_EXTRACTION_INTERVAL = "ProductExtractionInterval";
+    private static final String PRODUCT_EXTRACTION_AMOUNT = "ProductExtractionAmount";
+    private static final String PRODUCT_EXTRACTION_REVISION = "ProductExtractionRevision";
 
     private final IManagedGridNode mainNode;
     private final PatternP2PTunnelPart input;
@@ -37,6 +42,7 @@ public final class PatternP2PTunnelInputLogic {
     private ReturnMode returnMode = ReturnMode.UNBLOCKED;
     private PatternP2PUnitConfiguration patternP2PUnitConfiguration = PatternP2PUnitConfiguration.DEFAULT;
     private long patternP2PUnitConfigurationRevision;
+    private EndpointProductExtractionSettings productExtractionSettings = EndpointProductExtractionSettings.DEFAULT;
 
     public PatternP2PTunnelInputLogic(IManagedGridNode mainNode, PatternP2PTunnelPart input) {
         this.mainNode = mainNode;
@@ -82,6 +88,41 @@ public final class PatternP2PTunnelInputLogic {
         return patternP2PUnitConfigurationRevision;
     }
 
+    public EndpointProductExtractionSettings getProductExtractionSettings() {
+        return productExtractionSettings;
+    }
+
+    public void setProductExtractionEnabled(boolean enabled) {
+        updateProductExtraction(enabled, productExtractionSettings.interval(), productExtractionSettings.amount());
+    }
+
+    public void setProductExtractionInterval(int interval) {
+        updateProductExtraction(productExtractionSettings.enabled(), interval, productExtractionSettings.amount());
+    }
+
+    public void setProductExtractionAmount(int amount) {
+        updateProductExtraction(productExtractionSettings.enabled(), productExtractionSettings.interval(), amount);
+    }
+
+    private void updateProductExtraction(boolean enabled, int interval, int amount) {
+        var updated = new EndpointProductExtractionSettings(enabled, interval, amount,
+                productExtractionSettings.revision() + 1);
+        if (productExtractionSettings.enabled() == updated.enabled()
+                && productExtractionSettings.interval() == updated.interval()
+                && productExtractionSettings.amount() == updated.amount()) {
+            return;
+        }
+        productExtractionSettings = updated;
+        var unitConfiguration = patternP2PUnitConfiguration.withProductExtraction(
+                updated.interval(), updated.amount());
+        if (!unitConfiguration.equals(patternP2PUnitConfiguration)) {
+            setPatternP2PUnitConfiguration(unitConfiguration);
+        } else {
+            alertProductExtractionEndpoints();
+            input.getHost().markForSave();
+        }
+    }
+
     public void setPatternP2PUnitConfiguration(PatternP2PUnitConfiguration configuration) {
         Objects.requireNonNull(configuration, "configuration");
         if (patternP2PUnitConfiguration.equals(configuration)) {
@@ -102,6 +143,22 @@ public final class PatternP2PTunnelInputLogic {
             manager.getLogic().applyMainConfiguration(patternP2PUnitConfiguration,
                     patternP2PUnitConfigurationRevision);
         }
+        alertProductExtractionEndpoints();
+    }
+
+    private void alertProductExtractionEndpoints() {
+        for (var output : getOutputSnapshot()) {
+            output.getOutputLogic().alertRetry();
+        }
+        var grid = mainNode.getGrid();
+        if (grid == null || !input.hasConfiguredFrequency()) {
+            return;
+        }
+        short frequency = input.getFrequency();
+        for (var port : grid.getService(PatternP2PTopologyGridService.class)
+                .getPortsForFrequency(frequency, PatternP2PUnitPortType.EXTRACT)) {
+            port.alertTicking();
+        }
     }
 
     public void invalidateOutputs() {
@@ -119,15 +176,12 @@ public final class PatternP2PTunnelInputLogic {
             return;
         }
         short frequency = input.getFrequency();
-        for (var output : grid.getMachines(PatternP2PTunnelPart.class)) {
-            if (output.isOutput() && output.getFrequency() == frequency) {
-                output.resetTaskState();
-            }
+        var topology = grid.getService(PatternP2PTopologyGridService.class);
+        for (var output : topology.getOutputs(frequency)) {
+            output.resetTaskState();
         }
-        for (var manager : grid.getMachines(PatternP2PUnitManagerPart.class)) {
-            if (manager.getFrequency() == frequency) {
-                manager.resetTaskState();
-            }
+        for (var manager : topology.getManagers(frequency)) {
+            manager.resetTaskState();
         }
         invalidateOutputAvailability();
     }
@@ -190,9 +244,7 @@ public final class PatternP2PTunnelInputLogic {
         if (grid == null || !input.hasConfiguredFrequency()) {
             return List.of();
         }
-        return grid.getMachines(PatternP2PUnitManagerPart.class).stream()
-                .filter(manager -> manager.getFrequency() == input.getFrequency())
-                .toList();
+        return grid.getService(PatternP2PTopologyGridService.class).getManagers(input.getFrequency());
     }
 
     private void markCursorForSave() {
@@ -217,6 +269,19 @@ public final class PatternP2PTunnelInputLogic {
                 : PatternP2PUnitConfiguration.DEFAULT.withReturnMode(returnMode);
         returnMode = patternP2PUnitConfiguration.returnMode();
         patternP2PUnitConfigurationRevision = data.getLong(PATTERN_P2P_UNIT_CONFIGURATION_REVISION);
+        productExtractionSettings = new EndpointProductExtractionSettings(
+                data.getBoolean(PRODUCT_EXTRACTION_ENABLED),
+                data.contains(PRODUCT_EXTRACTION_INTERVAL)
+                        ? data.getInt(PRODUCT_EXTRACTION_INTERVAL) : ProductExtractionSettings.DEFAULT_INTERVAL,
+                data.contains(PRODUCT_EXTRACTION_AMOUNT)
+                        ? data.getInt(PRODUCT_EXTRACTION_AMOUNT) : ProductExtractionSettings.DEFAULT_AMOUNT,
+                data.getLong(PRODUCT_EXTRACTION_REVISION));
+        CompoundTag unitConfiguration = data.getCompound(PATTERN_P2P_UNIT_CONFIGURATION);
+        if (!unitConfiguration.contains(PRODUCT_EXTRACTION_INTERVAL)
+                || !unitConfiguration.contains(PRODUCT_EXTRACTION_AMOUNT)) {
+            patternP2PUnitConfiguration = patternP2PUnitConfiguration.withProductExtraction(
+                    productExtractionSettings.interval(), productExtractionSettings.amount());
+        }
     }
 
     public void writeToNBT(CompoundTag data, HolderLookup.Provider registries) {
@@ -224,5 +289,9 @@ public final class PatternP2PTunnelInputLogic {
         data.putByte(RETURN_MODE, (byte) returnMode.getId());
         data.put(PATTERN_P2P_UNIT_CONFIGURATION, patternP2PUnitConfiguration.write());
         data.putLong(PATTERN_P2P_UNIT_CONFIGURATION_REVISION, patternP2PUnitConfigurationRevision);
+        data.putBoolean(PRODUCT_EXTRACTION_ENABLED, productExtractionSettings.enabled());
+        data.putInt(PRODUCT_EXTRACTION_INTERVAL, productExtractionSettings.interval());
+        data.putInt(PRODUCT_EXTRACTION_AMOUNT, productExtractionSettings.amount());
+        data.putLong(PRODUCT_EXTRACTION_REVISION, productExtractionSettings.revision());
     }
 }

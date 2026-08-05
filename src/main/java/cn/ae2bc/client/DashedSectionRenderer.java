@@ -34,11 +34,32 @@ final class DashedSectionRenderer {
         if (trailingTitle == null) {
             drawDashedHorizontal(graphics, titleEnd + 4, right - 5, absoluteTop);
         } else {
-            int trailingStart = offsetX + imageWidth - TITLE_X - font.width(trailingTitle);
+            int trailingStart = offsetX + trailingContentX(imageWidth, font.width(trailingTitle));
             int trailingEnd = trailingStart + font.width(trailingTitle);
             drawDashedHorizontal(graphics, titleEnd + 4, trailingStart - 4, absoluteTop);
             drawDashedHorizontal(graphics, trailingEnd + 4, right - 5, absoluteTop);
         }
+        drawDashedVertical(graphics, left, absoluteTop + 5, absoluteBottom - 5);
+        drawDashedVertical(graphics, right, absoluteTop + 5, absoluteBottom - 5);
+        drawDashedHorizontal(graphics, left + 5, right - 5, absoluteBottom);
+    }
+
+    static void drawBackground(GuiGraphics graphics, Font font, Component title, int trailingReservedWidth,
+                               int offsetX, int offsetY, int imageWidth, int top, int bottom) {
+        int left = offsetX + 7;
+        int right = offsetX + imageWidth - 7;
+        int absoluteTop = offsetY + top;
+        int absoluteBottom = offsetY + bottom;
+        int titleEnd = offsetX + TITLE_X + font.width(title);
+        int trailingStart = offsetX + trailingContentX(imageWidth, trailingReservedWidth);
+
+        drawTopLeftCorner(graphics, left, absoluteTop);
+        drawTopRightCorner(graphics, right, absoluteTop);
+        drawBottomLeftCorner(graphics, left, absoluteBottom);
+        drawBottomRightCorner(graphics, right, absoluteBottom);
+        drawDashedHorizontal(graphics, left + 5, offsetX + TITLE_X - 2, absoluteTop);
+        drawDashedHorizontal(graphics, titleEnd + 4, trailingStart - 4, absoluteTop);
+        drawDashedHorizontal(graphics, trailingStart + trailingReservedWidth + 4, right - 5, absoluteTop);
         drawDashedVertical(graphics, left, absoluteTop + 5, absoluteBottom - 5);
         drawDashedVertical(graphics, right, absoluteTop + 5, absoluteBottom - 5);
         drawDashedHorizontal(graphics, left + 5, right - 5, absoluteBottom);
@@ -51,8 +72,12 @@ final class DashedSectionRenderer {
     static void drawTitle(GuiGraphics graphics, Font font, Component title, Component trailingTitle,
                           int y, int imageWidth) {
         drawTitle(graphics, font, title, y);
-        int trailingX = imageWidth - TITLE_X - font.width(trailingTitle);
+        int trailingX = trailingContentX(imageWidth, font.width(trailingTitle));
         graphics.drawString(font, trailingTitle, trailingX, y, 0xFF404040, false);
+    }
+
+    static int trailingContentX(int imageWidth, int width) {
+        return imageWidth - TITLE_X - Math.max(0, width);
     }
 
     private static void drawDashedHorizontal(GuiGraphics graphics, int left, int right, int y) {

@@ -12,14 +12,23 @@ final class VerticallyAlignedCheckbox extends AECheckbox {
     private static final int LABEL_GAP = 4;
 
     private final ScreenStyle style;
+    private final boolean showLabel;
 
     VerticallyAlignedCheckbox(ScreenStyle style, Component message) {
+        this(style, message, true);
+    }
+
+    VerticallyAlignedCheckbox(ScreenStyle style, Component message, boolean showLabel) {
         super(0, 0, 0, SIZE, style, message);
         this.style = style;
+        this.showLabel = showLabel;
     }
 
     int fitToMessage() {
-        int width = Minecraft.getInstance().font.width(getMessage()) + LABEL_GAP + CHECKBOX_WIDTH;
+        int labelWidth = showLabel
+                ? Minecraft.getInstance().font.width(getMessage()) + LABEL_GAP
+                : 0;
+        int width = labelWidth + CHECKBOX_WIDTH;
         setWidth(width);
         return width;
     }
@@ -29,7 +38,7 @@ final class VerticallyAlignedCheckbox extends AECheckbox {
         Component message = getMessage();
         var font = Minecraft.getInstance().font;
         int labelX = getX();
-        int checkboxX = labelX + font.width(message) + LABEL_GAP;
+        int checkboxX = showLabel ? labelX + font.width(message) + LABEL_GAP : labelX;
         boolean hovered = isMouseOver(mouseX, mouseY);
 
         setMessage(Component.empty());
@@ -41,9 +50,11 @@ final class VerticallyAlignedCheckbox extends AECheckbox {
             setMessage(message);
         }
 
-        int color = style.getColor(isActive()
-                ? PaletteColor.DEFAULT_TEXT_COLOR
-                : PaletteColor.MUTED_TEXT_COLOR).toARGB();
-        graphics.drawString(font, message, labelX, getY() + 2, color, false);
+        if (showLabel) {
+            int color = style.getColor(isActive()
+                    ? PaletteColor.DEFAULT_TEXT_COLOR
+                    : PaletteColor.MUTED_TEXT_COLOR).toARGB();
+            graphics.drawString(font, message, labelX, getY() + 2, color, false);
+        }
     }
 }

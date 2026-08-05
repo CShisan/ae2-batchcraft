@@ -4,7 +4,7 @@
     "../common/common.json"
   ],
   "generatedBackground": {
-    "width": 176,
+    "width": 200,
     "height": 109
   },
   "text": {
@@ -22,19 +22,19 @@
     "passive": {
       "left": 12,
       "top": 35,
-      "width": 73,
+      "width": 85,
       "height": 18
     },
     "active": {
-      "left": 91,
+      "left": 103,
       "top": 35,
-      "width": 73,
+      "width": 85,
       "height": 18
     },
     "energyDistributionMode": {
       "left": 12,
       "top": 77,
-      "width": 152,
+      "width": 176,
       "height": 18
     }
   }

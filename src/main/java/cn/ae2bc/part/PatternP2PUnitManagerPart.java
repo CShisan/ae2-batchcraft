@@ -31,6 +31,8 @@ import cn.ae2bc.logic.RemoteReturnInventory;
 import cn.ae2bc.logic.PatternP2PUnitIdentityColors;
 import cn.ae2bc.logic.PatternP2PUnitDimensions;
 import cn.ae2bc.logic.PatternP2PUnitManagerLogic;
+import cn.ae2bc.logic.PatternP2PUnitPortType;
+import cn.ae2bc.logic.PatternP2PTopologyGridService;
 import cn.ae2bc.client.model.PatternP2PUnitModelData;
 import cn.ae2bc.menu.PatternP2PUnitManagerMenu;
 import cn.ae2bc.registry.ModContent;
@@ -64,7 +66,8 @@ public final class PatternP2PUnitManagerPart extends CablePart implements Patter
 
     private final PatternP2PUnitManagerLogic logic = new PatternP2PUnitManagerLogic(getMainNode(), this);
     private final RemoteReturnInventory returnInventory = new RemoteReturnInventory(
-            this::findInputReturnInventory, logic::filterReturned, logic::onReturnedStack);
+            this::findInputReturnInventory, logic::filterReturned, logic::onReturnedStack,
+            this::alertReturnProducers);
     private final GenericStackItemStorage returnItemHandler = new GenericStackItemStorage(returnInventory);
     private final GenericStackFluidStorage returnFluidHandler = new GenericStackFluidStorage(returnInventory);
     private @Nullable BlockCapabilityCache<GenericInternalInventory, Direction> returnTargetCache;
@@ -104,6 +107,10 @@ public final class PatternP2PUnitManagerPart extends CablePart implements Patter
         }
         var previousInput = findInput();
         this.frequency = frequency;
+        var grid = getMainNode().getGrid();
+        if (grid != null) {
+            grid.getService(PatternP2PTopologyGridService.class).topologyChanged();
+        }
         getHost().markForSave();
         getHost().markForUpdate();
         if (previousInput != null) {
@@ -152,14 +159,23 @@ public final class PatternP2PUnitManagerPart extends CablePart implements Patter
         return returnFluidHandler;
     }
 
+    private void alertReturnProducers() {
+        var grid = getMainNode().getGrid();
+        if (grid == null) {
+            return;
+        }
+        for (PatternP2PUnitPortPart port : grid.getService(PatternP2PTopologyGridService.class)
+                .getPorts(patternP2PUnitId, PatternP2PUnitPortType.EXTRACT)) {
+            port.alertTicking();
+        }
+    }
+
     public @Nullable PatternP2PTunnelPart findInput() {
         var grid = getMainNode().getGrid();
         if (grid == null || frequency == 0) {
             return null;
         }
-        return grid.getMachines(PatternP2PTunnelPart.class).stream()
-                .filter(part -> !part.isOutput() && part.getFrequency() == frequency)
-                .findFirst().orElse(null);
+        return grid.getService(PatternP2PTopologyGridService.class).findInput(frequency);
     }
 
     public void synchronizeFromInput() {
@@ -380,10 +396,9 @@ public final class PatternP2PUnitManagerPart extends CablePart implements Patter
         if (grid == null) {
             return;
         }
-        for (PatternP2PUnitPortPart port : grid.getMachines(PatternP2PUnitPortPart.class)) {
-            if (port.isBoundTo(this)) {
-                port.getHost().markForUpdate();
-            }
+        for (PatternP2PUnitPortPart port : grid.getService(PatternP2PTopologyGridService.class)
+                .getPorts(patternP2PUnitId)) {
+            port.getHost().markForUpdate();
         }
     }
 }

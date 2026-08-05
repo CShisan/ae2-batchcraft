@@ -32,6 +32,7 @@ item_ids:
 - ae2_batchcraft:pattern_p2p_unit_port_break
 - ae2_batchcraft:pattern_p2p_unit_port_transfer
 - ae2_batchcraft:pattern_p2p_unit_port_return
+- ae2_batchcraft:pattern_p2p_unit_port_extract
 - ae2_batchcraft:pattern_p2p_unit_port_redstone
 - ae2_batchcraft:pattern_p2p_unit_port_energy
 ---
@@ -197,6 +198,7 @@ It supplies the machine in front of every Pattern P2P Tunnel output on the same 
   <ItemImage id="ae2_batchcraft:pattern_p2p_unit_manager" scale="3" />
   <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_transfer" scale="2" />
   <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_return" scale="2" />
+  <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_extract" scale="2" />
   <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_redstone" scale="2" />
   <ItemImage id="ae2_batchcraft:pattern_p2p_unit_port_energy" scale="2" />
 </Row>
@@ -253,6 +255,10 @@ Receives block items or fluids set to **Place** and places them into the world i
 
 Accepts items and fluids pushed by adjacent devices or pipes and returns them to the input as products of the active job.
 
+#### Extraction Port
+
+While a job is active, pulls products from the machine against its front face. Only the extraction interval and amount apply to this port; the input-side extraction switch does not disable it. A synchronized Unit Manager inherits both values from the Pattern P2P input, while an unsynchronized manager can configure them locally. Extraction may run while ingredients are still being dispatched; the job does not finish until all ingredients have been sent. The configured interval is never shortened; repeated empty attempts add a gradual idle backoff capped at 20 ticks, and storage capability changes wake extraction early.
+
 #### Pickup Port
 
 Collects item entities in the block space in front of it and returns them to the input. It also accepts products pushed by adjacent devices like a Return Port.
@@ -286,17 +292,21 @@ The Manager is available in fluix and `16` dyed variants. Its color follows AE c
   </Row>
 
   <Row gap="12">
-    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_drop" />
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_extract" />
     <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_pickup" />
   </Row>
 
   <Row gap="12">
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_drop" />
     <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_place" />
-    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_break" />
   </Row>
 
   <Row gap="12">
+    <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_break" />
     <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_redstone" />
+  </Row>
+
+  <Row gap="12">
     <RecipeFor id="ae2_batchcraft:pattern_p2p_unit_port_energy" />
   </Row>
 </Column>
@@ -313,15 +323,15 @@ The Manager is available in fluix and `16` dyed variants. Its color follows AE c
 
 ### Purpose
 
-Makes a Pattern Provider or Pattern P2P output actively extract products from an adjacent machine, reducing the need for a separate output pipe.
+Makes a Pattern Provider actively extract filtered products from an adjacent machine.
 
 ### How to Use
 
-Install the card in the Pattern Provider's upgrade slot. Open the Pattern Provider and select **Product Extraction Settings** on the left toolbar. Connected outputs automatically use the settings of their input.
+Install the card in the Pattern Provider's upgrade slot. Open the Pattern Provider and select **Product Extraction Settings** on the left toolbar. Downstream endpoint extraction is configured independently on the Pattern P2P input.
 
 ### Configuration
 
-Set the extraction interval and maximum amount per extraction. Place item markers in the filter slots, then choose a filter mode.
+Set the active extraction interval and maximum amount per extraction. Place item markers in the filter slots, then choose a filter mode. The configured interval is never shortened; repeated empty attempts add a gradual idle backoff capped at 20 ticks, and storage capability changes wake extraction early.
 
 #### Blacklist
 

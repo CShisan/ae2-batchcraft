@@ -46,7 +46,7 @@ import java.util.Objects;
 /**
  * Owns one output-side task batch, return policy, retry state, and input-side configuration.
  */
-public final class PatternP2PTunnelOutputLogic {
+public final class PatternP2PTunnelOutputLogic implements ProductExtractionTask {
     private static final String PENDING_INPUTS = "PendingInputs";
     private static final String PENDING_INPUT_DIRECTION = "InputDirection";
     private static final String RETURN_MODE = "ReturnMode";
@@ -63,10 +63,9 @@ public final class PatternP2PTunnelOutputLogic {
     private final PatternP2PTunnelPart output;
     private final IActionSource retryActionSource;
     private final List<PendingInput> pendingInputs = new ArrayList<>();
-    private final List<GenericStack> productExtractionRecovery = new ArrayList<>();
+    private final ExtractionRecoveryQueue productExtractionRecovery;
     private final ReturnBatchTracker<AEKey, AEItemKey> returnBatch = new ReturnBatchTracker<>();
     private @Nullable TargetCache targetCache;
-    private long lastProductExtractionTick = Long.MIN_VALUE;
     private ReturnMode returnMode = ReturnMode.UNBLOCKED;
     private boolean syncInputSettings = true;
     private EnergyDistributionMode energyDistributionMode = EnergyDistributionMode.EVEN;
@@ -75,6 +74,7 @@ public final class PatternP2PTunnelOutputLogic {
         this.mainNode = mainNode;
         this.output = output;
         this.retryActionSource = new MachineSource(mainNode::getNode);
+        this.productExtractionRecovery = new ExtractionRecoveryQueue(() -> output.getHost().markForSave());
         mainNode.addService(IGridTickable.class, new RetryTicker());
     }
 
@@ -461,14 +461,7 @@ public final class PatternP2PTunnelOutputLogic {
                 pendingInputs.add(new PendingInput(stack, face));
             }
         }
-        productExtractionRecovery.clear();
-        var recovery = data.getList(PRODUCT_EXTRACTION_RECOVERY, Tag.TAG_COMPOUND);
-        for (int i = 0; i < recovery.size(); i++) {
-            GenericStack stack = GenericStack.readTag(registries, recovery.getCompound(i));
-            if (stack != null && stack.amount() > 0) {
-                productExtractionRecovery.add(stack);
-            }
-        }
+        productExtractionRecovery.read(data, PRODUCT_EXTRACTION_RECOVERY, registries);
     }
 
     public void writeToNBT(CompoundTag data, HolderLookup.Provider registries) {
@@ -506,11 +499,7 @@ public final class PatternP2PTunnelOutputLogic {
             list.add(entry);
         }
         data.put(PENDING_INPUTS, list);
-        ListTag recovery = new ListTag();
-        for (GenericStack stack : productExtractionRecovery) {
-            recovery.add(GenericStack.writeTag(registries, stack));
-        }
-        data.put(PRODUCT_EXTRACTION_RECOVERY, recovery);
+        productExtractionRecovery.write(data, PRODUCT_EXTRACTION_RECOVERY, registries);
     }
 
     public void addDrops(List<net.minecraft.world.item.ItemStack> drops) {
@@ -518,9 +507,7 @@ public final class PatternP2PTunnelOutputLogic {
             GenericStack stack = pending.stack();
             stack.what().addDrops(stack.amount(), drops, output.getLevel(), output.getBlockEntity().getBlockPos());
         }
-        for (GenericStack stack : productExtractionRecovery) {
-            stack.what().addDrops(stack.amount(), drops, output.getLevel(), output.getBlockEntity().getBlockPos());
-        }
+        productExtractionRecovery.addDrops(drops, output.getLevel(), output.getBlockEntity().getBlockPos());
     }
 
     public void clearContent() {
@@ -570,73 +557,64 @@ public final class PatternP2PTunnelOutputLogic {
     }
 
     public void alertRetry() {
-        mainNode.ifPresent((grid, node) -> grid.getTickManager().alertDevice(node));
+        mainNode.ifPresent((grid, node) -> {
+            if (!pendingInputs.isEmpty()) {
+                grid.getTickManager().alertDevice(node);
+            }
+            grid.getService(ProductExtractionGridService.class).wake(node, this);
+        });
     }
 
-    private ProductExtractionTickState tickProductExtraction() {
+    @Override
+    public boolean hasProductExtractionWork() {
+        var settings = output.getProductExtractionSettingsFromInput();
+        return !productExtractionRecovery.isEmpty() || settings != null && settings.enabled();
+    }
+
+    @Override
+    public int getProductExtractionInterval() {
+        var settings = output.getProductExtractionSettingsFromInput();
+        return settings == null ? ProductExtractionSettings.DEFAULT_INTERVAL : settings.interval();
+    }
+
+    @Override
+    public ProductExtractionTickState tickProductExtraction() {
         if (!mainNode.isActive() || !(output.getLevel() instanceof ServerLevel level)) {
             return ProductExtractionTickState.DISABLED;
         }
-        drainProductExtractionRecovery();
-        var settings = output.getProductExtractionSettingsFromInput();
-        if (settings == null || !settings.enabled()) {
+        boolean recoveryProgress = drainProductExtractionRecovery();
+        var endpointSettings = output.getProductExtractionSettingsFromInput();
+        if (endpointSettings == null || !endpointSettings.enabled()) {
+            if (recoveryProgress) {
+                return ProductExtractionTickState.PROGRESSED;
+            }
             return productExtractionRecovery.isEmpty()
                     ? ProductExtractionTickState.DISABLED : ProductExtractionTickState.WAITING;
         }
-        long tick = level.getGameTime();
-        if (lastProductExtractionTick != Long.MIN_VALUE
-                && tick - lastProductExtractionTick < settings.interval()) {
-            return ProductExtractionTickState.WAITING;
-        }
-        lastProductExtractionTick = tick;
+        var settings = endpointSettings.toExtractionSettings();
         Direction side = output.getSide();
         if (side == null) {
-            return ProductExtractionTickState.ATTEMPTED;
+            return recoveryProgress
+                    ? ProductExtractionTickState.PROGRESSED : ProductExtractionTickState.NO_PROGRESS;
         }
         var targetPos = output.getBlockEntity().getBlockPos().relative(side);
         Direction targetSide = side.getOpposite();
         var sources = getTargetCache(level, targetPos).get(targetSide).resolveStorages(this::alertRetry);
-        ProductExtractor.extract(sources, output.getReturnInventory(), settings, retryActionSource,
-                this::queueProductExtractionRecovery);
-        return ProductExtractionTickState.ATTEMPTED;
+        int moved = ProductExtractor.extract(ExtractionSource.fromTypeMap(sources),
+                output.getReturnInventory(), settings, retryActionSource,
+                productExtractionRecovery::queue);
+        return moved > 0 || recoveryProgress
+                ? ProductExtractionTickState.PROGRESSED : ProductExtractionTickState.NO_PROGRESS;
     }
 
-    private void queueProductExtractionRecovery(GenericStack stack) {
-        for (int i = 0; i < productExtractionRecovery.size(); i++) {
-            GenericStack existing = productExtractionRecovery.get(i);
-            if (existing.what().equals(stack.what())) {
-                productExtractionRecovery.set(i,
-                        new GenericStack(existing.what(), saturatingAdd(existing.amount(), stack.amount())));
-                output.getHost().markForSave();
-                return;
-            }
-        }
-        productExtractionRecovery.add(stack);
-        output.getHost().markForSave();
-    }
-
-    private void drainProductExtractionRecovery() {
-        boolean changed = false;
+    private boolean drainProductExtractionRecovery() {
         RemoteReturnInventory destination = output.getReturnInventory();
         destination.setProductExtractionBypass(true);
         try {
-            for (var iterator = productExtractionRecovery.listIterator(); iterator.hasNext(); ) {
-                GenericStack stack = iterator.next();
-                long inserted = destination.insert(
-                        stack.what(), stack.amount(), Actionable.MODULATE, retryActionSource);
-                if (inserted >= stack.amount()) {
-                    iterator.remove();
-                    changed = true;
-                } else if (inserted > 0) {
-                    iterator.set(new GenericStack(stack.what(), stack.amount() - inserted));
-                    changed = true;
-                }
-            }
+            return productExtractionRecovery.drain((what, amount) ->
+                    destination.insert(what, amount, Actionable.MODULATE, retryActionSource));
         } finally {
             destination.setProductExtractionBypass(false);
-        }
-        if (changed) {
-            output.getHost().markForSave();
         }
     }
 
@@ -711,27 +689,22 @@ public final class PatternP2PTunnelOutputLogic {
     }
 
     private void onTargetCapabilityInvalidated() {
-        wakeRetryIfNeeded();
+        alertRetry();
     }
 
     private final class RetryTicker implements IGridTickable {
         @Override
         public TickingRequest getTickingRequest(IGridNode node) {
-            // Periodically wake sleeping outputs so a newly installed provider card is discovered.
-            return new TickingRequest(1, TickRates.Interface.getMax(), false, TickRates.Interface.getMax());
+            return new TickingRequest(1, 20, false, TickRates.Interface.getMax());
         }
 
         @Override
         public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
             boolean retryProgress = !pendingInputs.isEmpty() && mainNode.isActive() && retryPending();
-            ProductExtractionTickState extraction = tickProductExtraction();
-            if (retryProgress || extraction == ProductExtractionTickState.ATTEMPTED) {
+            if (retryProgress) {
                 return TickRateModulation.URGENT;
             }
-            if (extraction == ProductExtractionTickState.WAITING) {
-                return TickRateModulation.SLOWER;
-            }
-            return pendingInputs.isEmpty() ? TickRateModulation.IDLE : TickRateModulation.SLOWER;
+            return pendingInputs.isEmpty() ? TickRateModulation.SLEEP : TickRateModulation.SLOWER;
         }
     }
 }

@@ -14,6 +14,8 @@ import cn.ae2bc.part.PatternP2PUnitPortPart;
 import cn.ae2bc.part.PatternP2PUnitManagerPart;
 import cn.ae2bc.placer.ComponentPlacerItem;
 import cn.ae2bc.logic.PatternP2PEnergyGridService;
+import cn.ae2bc.logic.PatternP2PTopologyGridService;
+import cn.ae2bc.logic.ProductExtractionGridService;
 import cn.ae2bc.registry.ModContent;
 import cn.ae2bc.registry.ModMenus;
 import com.mojang.logging.LogUtils;
@@ -33,6 +35,8 @@ public final class Ae2bcMod {
 
     public Ae2bcMod(IEventBus modBus) {
         GridServices.register(PatternP2PEnergyGridService.class, PatternP2PEnergyGridService.class);
+        GridServices.register(PatternP2PTopologyGridService.class, PatternP2PTopologyGridService.class);
+        GridServices.register(ProductExtractionGridService.class, ProductExtractionGridService.class);
         PatternP2PTunnelPart.registerModels();
         PatternP2PUnitManagerPart.registerModels();
         PatternP2PTunnelEnergyPart.registerModels();
