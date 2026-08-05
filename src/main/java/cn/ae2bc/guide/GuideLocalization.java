@@ -15,15 +15,22 @@ public final class GuideLocalization {
         return normalized.equals("zh") || normalized.startsWith("zh_");
     }
 
-    public static boolean isRootPage(String path) {
-        return "index".equals(path) || "index.md".equals(path);
+    public static String localizedPath(String language) {
+        return localizedPath(language, "index.md");
     }
 
-    public static String localizedPath(String language) {
+    public static String localizedPath(String language, String pagePath) {
         var normalized = language == null ? "" : language.replace('-', '_').toLowerCase(Locale.ROOT);
         if (normalized.isBlank() || !isChinese(normalized)) {
             normalized = "zh_cn";
         }
-        return "ae2guide_localized/" + normalized + "/index.md";
+        var normalizedPagePath = pagePath == null || pagePath.isBlank() ? "index.md" : pagePath.replace('\\', '/');
+        if ("index".equals(normalizedPagePath)) {
+            normalizedPagePath = "index.md";
+        }
+        if (normalizedPagePath.startsWith("/") || normalizedPagePath.contains("../")) {
+            normalizedPagePath = "index.md";
+        }
+        return "ae2guide/_" + normalized + "/" + normalizedPagePath;
     }
 }

@@ -20,8 +20,7 @@ public abstract class GuideMeMixin {
     @Inject(method = "getParsedPage", at = @At("HEAD"), cancellable = true, remap = false)
     private void ae2bc$selectLocalizedGuideMePage(ResourceLocation pageId,
                                                     CallbackInfoReturnable<ParsedGuidePage> cir) {
-        if (!pageId.getNamespace().equals(Ae2bcMod.MOD_ID)
-                || !GuideLocalization.isRootPage(pageId.getPath())) {
+        if (!pageId.getNamespace().equals(Ae2bcMod.MOD_ID)) {
             return;
         }
 
@@ -31,14 +30,18 @@ public abstract class GuideMeMixin {
             return;
         }
 
+        var normalizedLanguage = language.replace('-', '_').toLowerCase(Locale.ROOT);
+        if ("zh_cn".equals(normalizedLanguage)) {
+            return;
+        }
+
         var resourceManager = minecraft.getResourceManager();
         var localizedResource = ResourceLocation.fromNamespaceAndPath(
-                Ae2bcMod.MOD_ID, GuideLocalization.localizedPath(language));
+                Ae2bcMod.MOD_ID, GuideLocalization.localizedPath(language, pageId.getPath()));
         var resource = resourceManager.getResource(localizedResource).orElse(null);
-        var normalizedLanguage = language.replace('-', '_').toLowerCase(Locale.ROOT);
-        if (resource == null && !"zh_cn".equals(normalizedLanguage)) {
+        if (resource == null) {
             localizedResource = ResourceLocation.fromNamespaceAndPath(
-                    Ae2bcMod.MOD_ID, "ae2guide_localized/zh_cn/index.md");
+                    Ae2bcMod.MOD_ID, GuideLocalization.localizedPath("zh_cn", pageId.getPath()));
             resource = resourceManager.getResource(localizedResource).orElse(null);
         }
         if (resource == null) {

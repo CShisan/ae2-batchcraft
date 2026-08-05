@@ -17,16 +17,19 @@ class GuideLocalizationTest {
     }
 
     @Test
-    void acceptsBothRootPageIdForms() {
-        assertTrue(GuideLocalization.isRootPage("index.md"));
-        assertTrue(GuideLocalization.isRootPage("index"));
-        assertFalse(GuideLocalization.isRootPage("machines.md"));
-    }
-
-    @Test
     void keepsChineseRegionWhenAResourceExistsAndNormalizesSeparators() {
-        assertEquals("ae2guide_localized/zh_cn/index.md", GuideLocalization.localizedPath("ZH-CN"));
-        assertEquals("ae2guide_localized/zh_tw/index.md", GuideLocalization.localizedPath("zh-TW"));
-        assertEquals("ae2guide_localized/zh_cn/index.md", GuideLocalization.localizedPath(""));
+        assertEquals("ae2guide/_zh_cn/index.md", GuideLocalization.localizedPath("ZH-CN"));
+        assertEquals("ae2guide/_zh_tw/index.md", GuideLocalization.localizedPath("zh-TW"));
+        assertEquals("ae2guide/_zh_cn/index.md", GuideLocalization.localizedPath(""));
+        assertEquals("ae2guide/_zh_cn/index.md",
+                GuideLocalization.localizedPath("zh_cn", "index"));
+        assertEquals("ae2guide/_zh_cn/unit/extraction-port.md",
+                GuideLocalization.localizedPath("ZH-CN", "unit/extraction-port.md"));
+        assertEquals("ae2guide/_zh_cn/unit/extraction-port.md",
+                GuideLocalization.localizedPath("zh_cn", "unit\\extraction-port.md"));
+        assertEquals("ae2guide/_zh_cn/index.md",
+                GuideLocalization.localizedPath("zh_cn", "../outside.md"));
+        assertEquals("ae2guide/_zh_cn/index.md",
+                GuideLocalization.localizedPath("zh_cn", "/unit/extraction-port.md"));
     }
 }
